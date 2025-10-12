@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마사지 관리 프로그램</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        .remaining-time {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ef4444;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-full">
+    <!-- 언어 선택 모달 -->
+    <div id="languageModal" class="modal" style="display: block;">
+        <div class="modal-content text-center">
+            <h2 class="text-2xl font-bold mb-6">언어 선택 / Language / ภาษา</h2>
+            <div class="space-y-4">
+                <button onclick="setLanguage('ko')" class="w-full bg-blue-500 text-white py-3 px-6 rounded-lg text-lg hover:bg-blue-600">한국어</button>
+                <button onclick="setLanguage('en')" class="w-full bg-green-500 text-white py-3 px-6 rounded-lg text-lg hover:bg-green-600">English</button>
+                <button onclick="setLanguage('th')" class="w-full bg-purple-500 text-white py-3 px-6 rounded-lg text-lg hover:bg-purple-600">ไทย</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 화면 -->
+    <div id="mainScreen" class="container mx-auto p-6" style="display: none;">
+        <!-- 헤더 -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-800" data-translate="title">마사지 관리 프로그램</h1>
+                <button onclick="showLanguageModal()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" data-translate="changeLanguage">언어 변경</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <label class="block text-sm font-medium mb-2" data-translate="todayDate">오늘 날짜</label>
+                    <input type="date" id="currentDate" class="border rounded px-3 py-2 w-full" onchange="updateCurrentDate()">
+                </div>
+                <div class="text-center">
+                    <label class="block text-sm font-medium mb-2" data-translate="currentTime">현재 시간</label>
+                    <div id="currentTime" class="text-xl font-bold text-blue-600"></div>
+                </div>
+                <div class="text-center">
+                    <button onclick="loginAdmin()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" data-translate="adminLogin">관리자 로그인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메뉴 버튼들 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <button onclick="showDashboard()" class="bg-blue-500 text-white py-4 px-6 rounded-lg text-lg hover:bg-blue-600" data-translate="dashboard">현황판</button>
+            <button onclick="showReservation()" class="bg-green-500 text-white py-4 px-6 rounded-lg text-lg hover:bg-green-600" data-translate="reservation">예약</button>
+            <button onclick="showStatistics()" class="bg-purple-500 text-white py-4 px-6 rounded-lg text-lg hover:bg-purple-600" data-translate="statistics">통계</button>
+            <button onclick="showDBManagement()" class="bg-orange-500 text-white py-4 px-6 rounded-lg text-lg hover:bg-orange-600" data-translate="dbManagement">DB 관리</button>
+        </div>
+
+        <!-- 현황판 -->
+        <div id="dashboardSection" class="bg-white rounded-lg shadow-md p-6" style="display: none;">
+            <h2 class="text-2xl font-bold mb-4" data-translate="dashboard">현황판</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2" data-translate="staff">직원명</th>
+                            <th class="border border-gray-300 p-2" data-translate="menu">메뉴</th>
+                            <th class="border border-gray-300 p-2" data-translate="duration">시간</th>
+                            <th class="border border-gray-300 p-2" data-translate="startTime">시작시간</th>
+                            <th class="border border-gray-300 p-2" data-translate="endTime">끝시간</th>
+                            <th class="border border-gray-300 p-2" data-translate="remainingTime">남은시간</th>
+                            <th class="border border-gray-300 p-2" data-translate="price">가격</th>
+                            <th class="border border-gray-300 p-2" data-translate="commission">커미션</th>
+                            <th class="border border-gray-300 p-2" data-translate="roomNumber">방번호</th>
+                            <th class="border border-gray-300 p-2" data-translate="actions">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 예약 섹션 -->
+        <div id="reservationSection" class="bg-white rounded-lg shadow-md p-6" style="display: none;">
+            <h2 class="text-2xl font-bold mb-4" data-translate="reservation">예약</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-translate="selectStaff">마사지사 선택</label>
+                    <select id="reservationStaff" class="w-full border rounded px-3 py-2">
+                        <option value="" data-translate="selectStaff">마사지사 선택</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-translate="selectMenu">메뉴 선택</label>
+                    <select id="reservationMenu" class="w-full border rounded px-3 py-2" onchange="updateReservationDetails()">
+                        <option value="" data-translate="selectMenu">메뉴 선택</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-translate="duration">시간</label>
+                    <select id="reservationDuration" class="w-full border rounded px-3 py-2" onchange="updateReservationDetails()">
+                        <option value="">시간 선택</option>
+                        <option value="30">30분</option>
+                        <option value="60">60분</option>
+                        <option value="90">90분</option>
+                        <option value="120">120분</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-translate="startTime">시작 시간</label>
+                    <input type="time" id="reservationStartTime" class="w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-translate="roomNumber">방번호 (선택사항)</label>
+                    <select id="reservationRoom" class="w-full border rounded px-3 py-2">
+                        <option value="">방 선택</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" data-translate="customerName">고객명 (선택사항)</label>
+                    <input type="text" id="reservationCustomer" class="w-full border rounded px-3 py-2" placeholder="고객명 입력">
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-gray-100 rounded">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><strong data-translate="price">가격:</strong> <span id="reservationPrice">0</span>원</div>
+                    <div><strong data-translate="commission">커미션:</strong> <span id="reservationCommission">0</span>원</div>
+                </div>
+            </div>
+            <button onclick="addReservation()" class="mt-4 bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600" data-translate="addReservation">예약 추가</button>
+        </div>
+
+        <!-- 통계 섹션 -->
+        <div id="statisticsSection" class="bg-white rounded-lg shadow-md p-6" style="display: none;">
+            <h2 class="text-2xl font-bold mb-4" data-translate="statistics">통계</h2>
+            <div class="mb-4 flex gap-4">
+                <button onclick="showDailyStats()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-translate="daily">일간</button>
+                <button onclick="showWeeklyStats()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" data-translate="weekly">주간</button>
+                <button onclick="showMonthlyStats()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600" data-translate="monthly">월간</button>
+            </div>
+            <div class="mb-4">
+                <input type="date" id="statsDate" class="border rounded px-3 py-2" onchange="updateStats()">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2" data-translate="staff">마사지사</th>
+                            <th class="border border-gray-300 p-2" data-translate="totalPrice">총 가격</th>
+                            <th class="border border-gray-300 p-2" data-translate="totalCommission">총 커미션</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTable">
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 p-4 bg-gray-100 rounded">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><strong data-translate="grandTotal">총 금액:</strong> <span id="grandTotalPrice">0</span>원</div>
+                    <div><strong data-translate="grandTotalCommission">총 커미션:</strong> <span id="grandTotalCommission">0</span>원</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DB 관리 섹션 -->
+        <div id="dbManagementSection" class="bg-white rounded-lg shadow-md p-6" style="display: none;">
+            <h2 class="text-2xl font-bold mb-4" data-translate="dbManagement">DB 관리</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button onclick="manageMenus()" class="bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-600" data-translate="menuManagement">메뉴 관리</button>
+                <button onclick="manageStaff()" class="bg-green-500 text-white py-3 px-4 rounded hover:bg-green-600" data-translate="staffManagement">직원 관리</button>
+                <button onclick="manageRooms()" class="bg-purple-500 text-white py-3 px-4 rounded hover:bg-purple-600" data-translate="roomManagement">방 관리</button>
+                <button onclick="manageCustomers()" class="bg-orange-500 text-white py-3 px-4 rounded hover:bg-orange-600" data-translate="customerManagement">고객 관리</button>
+                <button onclick="manageAdmins()" class="bg-red-500 text-white py-3 px-4 rounded hover:bg-red-600" data-translate="adminManagement">관리자 관리</button>
+                <button onclick="managePaymentMethods()" class="bg-yellow-500 text-white py-3 px-4 rounded hover:bg-yellow-600" data-translate="paymentMethodManagement">입금방식 관리</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 입금 모달 -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4" data-translate="payment">입금 처리</h3>
+            <div id="paymentMethods" class="space-y-4 mb-4">
+            </div>
+            <div class="mb-4">
+                <strong data-translate="totalAmount">총 금액:</strong> <span id="paymentTotalAmount">0</span>원
+            </div>
+            <div class="mb-4">
+                <strong data-translate="enteredAmount">입력된 금액:</strong> <span id="paymentEnteredAmount">0</span>원
+            </div>
+            <div class="flex gap-2">
+                <button onclick="processPayment()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" data-translate="confirm">확인</button>
+                <button onclick="closePaymentModal()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" data-translate="cancel">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 관리자 로그인 모달 -->
+    <div id="adminLoginModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4" data-translate="adminLogin">관리자 로그인</h3>
+            <div class="space-y-4">
+                <input type="text" id="adminId" placeholder="아이디" class="w-full border rounded px-3 py-2">
+                <input type="password" id="adminPassword" placeholder="비밀번호" class="w-full border rounded px-3 py-2">
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button onclick="processAdminLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-translate="login">로그인</button>
+                <button onclick="closeAdminLoginModal()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" data-translate="cancel">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 범용 관리 모달 -->
+    <div id="managementModal" class="modal">
+        <div class="modal-content">
+            <h3 id="managementTitle" class="text-xl font-bold mb-4"></h3>
+            <div id="managementContent"></div>
+            <button onclick="closeManagementModal()" class="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" data-translate="close">닫기</button>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentLanguage = 'ko';
+        let isAdminLoggedIn = false;
+        let currentPaymentReservationId = null;
+
+        // 데이터베이스 (로컬 스토리지 사용)
+        const databases = {
+            menus: 'massageMenus',
+            staff: 'massageStaff',
+            rooms: 'massageRooms',
+            customers: 'massageCustomers',
+            admins: 'massageAdmins',
+            paymentMethods: 'massagePaymentMethods',
+            reservations: 'massageReservations'
+        };
+
+        // 번역 데이터
+        const translations = {
+            ko: {
+                title: '마사지 관리 프로그램',
+                changeLanguage: '언어 변경',
+                todayDate: '오늘 날짜',
+                currentTime: '현재 시간',
+                adminLogin: '관리자 로그인',
+                dashboard: '현황판',
+                reservation: '예약',
+                statistics: '통계',
+                dbManagement: 'DB 관리',
+                staff: '직원명',
+                menu: '메뉴',
+                duration: '시간',
+                startTime: '시작시간',
+                endTime: '끝시간',
+                remainingTime: '남은시간',
+                price: '가격',
+                commission: '커미션',
+                roomNumber: '방번호',
+                actions: '작업',
+                selectStaff: '마사지사 선택',
+                selectMenu: '메뉴 선택',
+                customerName: '고객명',
+                addReservation: '예약 추가',
+                daily: '일간',
+                weekly: '주간',
+                monthly: '월간',
+                totalPrice: '총 가격',
+                totalCommission: '총 커미션',
+                grandTotal: '총 금액',
+                grandTotalCommission: '총 커미션',
+                menuManagement: '메뉴 관리',
+                staffManagement: '직원 관리',
+                roomManagement: '방 관리',
+                customerManagement: '고객 관리',
+                adminManagement: '관리자 관리',
+                paymentMethodManagement: '입금방식 관리',
+                payment: '입금 처리',
+                totalAmount: '총 금액',
+                enteredAmount: '입력된 금액',
+                confirm: '확인',
+                cancel: '취소',
+                login: '로그인',
+                close: '닫기',
+                edit: '수정',
+                delete: '삭제',
+                add: '추가',
+                save: '저장'
+            },
+            en: {
+                title: 'Massage Management System',
+                changeLanguage: 'Change Language',
+                todayDate: 'Today\'s Date',
+                currentTime: 'Current Time',
+                adminLogin: 'Admin Login',
+                dashboard: 'Dashboard',
+                reservation: 'Reservation',
+                statistics: 'Statistics',
+                dbManagement: 'DB Management',
+                staff: 'Staff',
+                menu: 'Menu',
+                duration: 'Duration',
+                startTime: 'Start Time',
+                endTime: 'End Time',
+                remainingTime: 'Remaining Time',
+                price: 'Price',
+                commission: 'Commission',
+                roomNumber: 'Room Number',
+                actions: 'Actions',
+                selectStaff: 'Select Staff',
+                selectMenu: 'Select Menu',
+                customerName: 'Customer Name',
+                addReservation: 'Add Reservation',
+                daily: 'Daily',
+                weekly: 'Weekly',
+                monthly: 'Monthly',
+                totalPrice: 'Total Price',
+                totalCommission: 'Total Commission',
+                grandTotal: 'Grand Total',
+                grandTotalCommission: 'Grand Total Commission',
+                menuManagement: 'Menu Management',
+                staffManagement: 'Staff Management',
+                roomManagement: 'Room Management',
+                customerManagement: 'Customer Management',
+                adminManagement: 'Admin Management',
+                paymentMethodManagement: 'Payment Method Management',
+                payment: 'Payment Processing',
+                totalAmount: 'Total Amount',
+                enteredAmount: 'Entered Amount',
+                confirm: 'Confirm',
+                cancel: 'Cancel',
+                login: 'Login',
+                close: 'Close',
+                edit: 'Edit',
+                delete: 'Delete',
+                add: 'Add',
+                save: 'Save'
+            },
+            th: {
+                title: 'ระบบจัดการนวดแผนไทย',
+                changeLanguage: 'เปลี่ยนภาษา',
+                todayDate: 'วันที่วันนี้',
+                currentTime: 'เวลาปัจจุบัน',
+                adminLogin: 'เข้าสู่ระบบผู้ดูแล',
+                dashboard: 'แดชบอร์ด',
+                reservation: 'การจอง',
+                statistics: 'สถิติ',
+                dbManagement: 'จัดการฐานข้อมูล',
+                staff: 'พนักงาน',
+                menu: 'เมนู',
+                duration: 'ระยะเวลา',
+                startTime: 'เวลาเริ่ม',
+                endTime: 'เวลาสิ้นสุด',
+                remainingTime: 'เวลาที่เหลือ',
+                price: 'ราคา',
+                commission: 'คอมมิชชั่น',
+                roomNumber: 'หมายเลขห้อง',
+                actions: 'การดำเนินการ',
+                selectStaff: 'เลือกพนักงาน',
+                selectMenu: 'เลือกเมนู',
+                customerName: 'ชื่อลูกค้า',
+                addReservation: 'เพิ่มการจอง',
+                daily: 'รายวัน',
+                weekly: 'รายสัปดาห์',
+                monthly: 'รายเดือน',
+                totalPrice: 'ราคารวม',
+                totalCommission: 'คอมมิชชั่นรวม',
+                grandTotal: 'ยอดรวมทั้งหมด',
+                grandTotalCommission: 'คอมมิชชั่นรวมทั้งหมด',
+                menuManagement: 'จัดการเมนู',
+                staffManagement: 'จัดการพนักงาน',
+                roomManagement: 'จัดการห้อง',
+                customerManagement: 'จัดการลูกค้า',
+                adminManagement: 'จัดการผู้ดูแล',
+                paymentMethodManagement: 'จัดการวิธีการชำระเงิน',
+                payment: 'การชำระเงิน',
+                totalAmount: 'จำนวนเงินรวม',
+                enteredAmount: 'จำนวนเงินที่ป้อน',
+                confirm: 'ยืนยัน',
+                cancel: 'ยกเลิก',
+                login: 'เข้าสู่ระบบ',
+                close: 'ปิด',
+                edit: 'แก้ไข',
+                delete: 'ลบ',
+                add: 'เพิ่ม',
+                save: 'บันทึก'
+            }
+        };
+
+        // 초기화
+        function initializeApp() {
+            initializeDatabases();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            document.getElementById('currentDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        // 데이터베이스 초기화
+        function initializeDatabases() {
+            // 기본 데이터 설정
+            if (!localStorage.getItem(databases.menus)) {
+                localStorage.setItem(databases.menus, JSON.stringify([
+                    {id: 1, name: '타이 마사지', duration: 60, price: 50000, commission: 25000},
+                    {id: 2, name: '오일 마사지', duration: 90, price: 80000, commission: 40000}
+                ]));
+            }
+
+            if (!localStorage.getItem(databases.staff)) {
+                localStorage.setItem(databases.staff, JSON.stringify([
+                    {id: 1, name: '김미영', phone: '010-1234-5678', bank: '국민은행', account: '123-456-789'},
+                    {id: 2, name: '이수진', phone: '010-9876-5432', bank: '신한은행', account: '987-654-321'}
+                ]));
+            }
+
+            if (!localStorage.getItem(databases.rooms)) {
+                localStorage.setItem(databases.rooms, JSON.stringify([
+                    {id: 1, roomNumber: '101', capacity: 1},
+                    {id: 2, roomNumber: '102', capacity: 2},
+                    {id: 3, roomNumber: '103', capacity: 1}
+                ]));
+            }
+
+            if (!localStorage.getItem(databases.customers)) {
+                localStorage.setItem(databases.customers, JSON.stringify([
+                    {id: 1, name: '홍길동', phone: '010-1111-2222', customerNumber: '100001'},
+                    {id: 2, name: '김철수', phone: '010-3333-4444', customerNumber: '100002'}
+                ]));
+            }
+
+            if (!localStorage.getItem(databases.admins)) {
+                localStorage.setItem(databases.admins, JSON.stringify([
+                    {id: 1, username: 'admin', password: '12345678', type: 'super', shopName: '', phone: ''}
+                ]));
+            }
+
+            if (!localStorage.getItem(databases.paymentMethods)) {
+                localStorage.setItem(databases.paymentMethods, JSON.stringify([
+                    {id: 1, name: '현금'},
+                    {id: 2, name: 'QR'},
+                    {id: 3, name: '쿠폰'},
+                    {id: 4, name: '기타'}
+                ]));
+            }
+
+            if (!localStorage.getItem(databases.reservations)) {
+                localStorage.setItem(databases.reservations, JSON.stringify([]));
+            }
+        }
+
+        // 언어 설정
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.getElementById('languageModal').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+            updateTranslations();
+            loadReservationData();
+        }
+
+        function showLanguageModal() {
+            document.getElementById('languageModal').style.display = 'block';
+        }
+
+        function updateTranslations() {
+            const elements = document.querySelectorAll('[data-translate]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[currentLanguage] && translations[currentLanguage][key]) {
+                    if (element.tagName === 'INPUT' && element.type === 'text') {
+                        element.placeholder = translations[currentLanguage][key];
+                    } else {
+                        element.textContent = translations[currentLanguage][key];
+                    }
+                }
+            });
+        }
+
+        // 시간 업데이트
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            updateDashboardRemainingTime();
+        }
+
+        function updateCurrentDate() {
+            loadReservationData();
+        }
+
+        // 섹션 표시/숨김
+        function hideAllSections() {
+            const sections = ['dashboardSection', 'reservationSection', 'statisticsSection', 'dbManagementSection'];
+            sections.forEach(section => {
+                document.getElementById(section).style.display = 'none';
+            });
+        }
+
+        function showDashboard() {
+            hideAllSections();
+            document.getElementById('dashboardSection').style.display = 'block';
+            loadDashboard();
+        }
+
+        function showReservation() {
+            hideAllSections();
+            document.getElementById('reservationSection').style.display = 'block';
+            loadReservationData();
+        }
+
+        function showStatistics() {
+            hideAllSections();
+            document.getElementById('statisticsSection').style.display = 'block';
+            document.getElementById('statsDate').value = document.getElementById('currentDate').value;
+            showDailyStats();
+        }
+
+        function showDBManagement() {
+            if (!isAdminLoggedIn) {
+                alert('관리자 로그인이 필요합니다.');
+                return;
+            }
+            hideAllSections();
+            document.getElementById('dbManagementSection').style.display = 'block';
+        }
+
+        // 현황판 관련 함수
+        function loadDashboard() {
+            const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+            const currentDate = document.getElementById('currentDate').value;
+            const todayReservations = reservations.filter(r => r.date === currentDate);
+            
+            const tableBody = document.getElementById('dashboardTable');
+            tableBody.innerHTML = '';
+
+            todayReservations.forEach(reservation => {
+                const row = document.createElement('tr');
+                const endTime = calculateEndTime(reservation.startTime, reservation.duration);
+                const remainingMinutes = calculateRemainingTime(reservation.startTime, reservation.duration);
+                
+                // 입금 완료된 항목은 배경색을 다르게 표시
+                if (reservation.paid) {
+                    row.className = 'bg-green-50';
+                }
+                
+                row.innerHTML = `
+                    <td class="border border-gray-300 p-2">${reservation.staffName}</td>
+                    <td class="border border-gray-300 p-2">${reservation.menuName}</td>
+                    <td class="border border-gray-300 p-2">${reservation.duration}분</td>
+                    <td class="border border-gray-300 p-2">${reservation.startTime}</td>
+                    <td class="border border-gray-300 p-2">${endTime}</td>
+                    <td class="border border-gray-300 p-2 remaining-time">${reservation.paid ? '입금완료' : remainingMinutes + '분'}</td>
+                    <td class="border border-gray-300 p-2">${reservation.price.toLocaleString()}원</td>
+                    <td class="border border-gray-300 p-2">${reservation.commission.toLocaleString()}원</td>
+                    <td class="border border-gray-300 p-2">${reservation.roomNumber || '-'}</td>
+                    <td class="border border-gray-300 p-2">
+                        ${reservation.paid ? 
+                            '<span class="bg-green-500 text-white px-3 py-1 rounded text-sm font-bold">입금 완료</span>' :
+                            `<button onclick="editReservation(${reservation.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                             <button onclick="showPaymentModal(${reservation.id})" class="bg-green-500 text-white px-2 py-1 rounded text-sm mr-1">입금</button>
+                             <button onclick="deleteReservation(${reservation.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>`
+                        }
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function calculateEndTime(startTime, duration) {
+            const [hours, minutes] = startTime.split(':').map(Number);
+            const startMinutes = hours * 60 + minutes;
+            const endMinutes = startMinutes + duration;
+            const endHours = Math.floor(endMinutes / 60);
+            const endMins = endMinutes % 60;
+            return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+        }
+
+        function calculateRemainingTime(startTime, duration) {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            const [hours, minutes] = startTime.split(':').map(Number);
+            const startMinutes = hours * 60 + minutes;
+            const endMinutes = startMinutes + duration;
+            
+            return Math.max(0, endMinutes - currentMinutes);
+        }
+
+        function updateDashboardRemainingTime() {
+            const remainingCells = document.querySelectorAll('.remaining-time');
+            remainingCells.forEach((cell, index) => {
+                const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+                const currentDate = document.getElementById('currentDate').value;
+                const todayReservations = reservations.filter(r => r.date === currentDate);
+                
+                if (todayReservations[index]) {
+                    const reservation = todayReservations[index];
+                    
+                    if (reservation.paid) {
+                        cell.textContent = '입금완료';
+                        cell.style.color = '#10b981';
+                        cell.style.fontWeight = 'bold';
+                    } else {
+                        const remaining = calculateRemainingTime(reservation.startTime, reservation.duration);
+                        cell.textContent = `${remaining}분`;
+                        
+                        if (remaining <= 10) {
+                            cell.style.color = '#ef4444';
+                        } else if (remaining <= 30) {
+                            cell.style.color = '#f59e0b';
+                        } else {
+                            cell.style.color = '#10b981';
+                        }
+                    }
+                }
+            });
+        }
+
+        // 예약 관련 함수
+        function loadReservationData() {
+            const staff = JSON.parse(localStorage.getItem(databases.staff) || '[]');
+            const menus = JSON.parse(localStorage.getItem(databases.menus) || '[]');
+            const rooms = JSON.parse(localStorage.getItem(databases.rooms) || '[]');
+
+            // 직원 목록 로드
+            const staffSelect = document.getElementById('reservationStaff');
+            staffSelect.innerHTML = '<option value="">마사지사 선택</option>';
+            staff.forEach(s => {
+                staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            });
+
+            // 메뉴 목록 로드
+            const menuSelect = document.getElementById('reservationMenu');
+            menuSelect.innerHTML = '<option value="">메뉴 선택</option>';
+            menus.forEach(m => {
+                menuSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+            });
+
+            // 방 목록 로드
+            const roomSelect = document.getElementById('reservationRoom');
+            roomSelect.innerHTML = '<option value="">방 선택</option>';
+            rooms.forEach(r => {
+                roomSelect.innerHTML += `<option value="${r.id}">${r.roomNumber}</option>`;
+            });
+        }
+
+        function updateReservationDetails() {
+            const menuId = document.getElementById('reservationMenu').value;
+            const duration = document.getElementById('reservationDuration').value;
+            
+            if (menuId && duration) {
+                const menus = JSON.parse(localStorage.getItem(databases.menus) || '[]');
+                const menu = menus.find(m => m.id == menuId);
+                
+                if (menu) {
+                    const price = Math.floor(menu.price * (duration / menu.duration));
+                    const commission = Math.floor(menu.commission * (duration / menu.duration));
+                    
+                    document.getElementById('reservationPrice').textContent = price.toLocaleString();
+                    document.getElementById('reservationCommission').textContent = commission.toLocaleString();
+                }
+            }
+        }
+
+        function addReservation() {
+            const staffId = document.getElementById('reservationStaff').value;
+            const menuId = document.getElementById('reservationMenu').value;
+            const duration = document.getElementById('reservationDuration').value;
+            const startTime = document.getElementById('reservationStartTime').value;
+            const roomId = document.getElementById('reservationRoom').value;
+            const customerName = document.getElementById('reservationCustomer').value;
+
+            if (!staffId || !menuId || !duration || !startTime) {
+                alert('필수 항목을 모두 입력해주세요.');
+                return;
+            }
+
+            const staff = JSON.parse(localStorage.getItem(databases.staff) || '[]');
+            const menus = JSON.parse(localStorage.getItem(databases.menus) || '[]');
+            const rooms = JSON.parse(localStorage.getItem(databases.rooms) || '[]');
+            const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+
+            const selectedStaff = staff.find(s => s.id == staffId);
+            const selectedMenu = menus.find(m => m.id == menuId);
+            const selectedRoom = rooms.find(r => r.id == roomId);
+
+            const price = Math.floor(selectedMenu.price * (duration / selectedMenu.duration));
+            const commission = Math.floor(selectedMenu.commission * (duration / selectedMenu.duration));
+
+            const newReservation = {
+                id: Date.now(),
+                date: document.getElementById('currentDate').value,
+                staffId: staffId,
+                staffName: selectedStaff.name,
+                menuId: menuId,
+                menuName: selectedMenu.name,
+                duration: parseInt(duration),
+                startTime: startTime,
+                roomId: roomId,
+                roomNumber: selectedRoom ? selectedRoom.roomNumber : '',
+                customerName: customerName,
+                price: price,
+                commission: commission,
+                paid: false
+            };
+
+            reservations.push(newReservation);
+            localStorage.setItem(databases.reservations, JSON.stringify(reservations));
+
+            alert('예약이 추가되었습니다.');
+            
+            // 폼 초기화
+            document.getElementById('reservationStaff').value = '';
+            document.getElementById('reservationMenu').value = '';
+            document.getElementById('reservationDuration').value = '';
+            document.getElementById('reservationStartTime').value = '';
+            document.getElementById('reservationRoom').value = '';
+            document.getElementById('reservationCustomer').value = '';
+            document.getElementById('reservationPrice').textContent = '0';
+            document.getElementById('reservationCommission').textContent = '0';
+        }
+
+        // 입금 관련 함수
+        function showPaymentModal(reservationId) {
+            currentPaymentReservationId = reservationId;
+            const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+            const reservation = reservations.find(r => r.id === reservationId);
+            const paymentMethods = JSON.parse(localStorage.getItem(databases.paymentMethods) || '[]');
+
+            document.getElementById('paymentTotalAmount').textContent = reservation.price.toLocaleString();
+            
+            const methodsContainer = document.getElementById('paymentMethods');
+            methodsContainer.innerHTML = '';
+
+            paymentMethods.forEach(method => {
+                methodsContainer.innerHTML += `
+                    <div class="flex items-center gap-2">
+                        <label class="w-20">${method.name}:</label>
+                        <input type="number" id="payment_${method.id}" class="border rounded px-2 py-1 flex-1" value="0" onchange="updatePaymentTotal()">
+                        <span>원</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('paymentModal').style.display = 'block';
+            updatePaymentTotal();
+        }
+
+        function updatePaymentTotal() {
+            const paymentMethods = JSON.parse(localStorage.getItem(databases.paymentMethods) || '[]');
+            let total = 0;
+
+            paymentMethods.forEach(method => {
+                const input = document.getElementById(`payment_${method.id}`);
+                if (input) {
+                    total += parseInt(input.value) || 0;
+                }
+            });
+
+            document.getElementById('paymentEnteredAmount').textContent = total.toLocaleString();
+        }
+
+        function processPayment() {
+            const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+            const reservation = reservations.find(r => r.id === currentPaymentReservationId);
+            const enteredAmount = parseInt(document.getElementById('paymentEnteredAmount').textContent.replace(/,/g, ''));
+
+            if (enteredAmount !== reservation.price) {
+                alert('입력된 금액이 총 금액과 일치하지 않습니다.');
+                return;
+            }
+
+            // 예약을 입금 완료로 표시
+            reservation.paid = true;
+            localStorage.setItem(databases.reservations, JSON.stringify(reservations));
+
+            alert('입금이 완료되었습니다.');
+            closePaymentModal();
+            loadDashboard();
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            currentPaymentReservationId = null;
+        }
+
+        // 통계 관련 함수
+        function showDailyStats() {
+            const date = document.getElementById('statsDate').value;
+            const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+            const dailyReservations = reservations.filter(r => r.date === date && r.paid);
+            
+            displayStats(dailyReservations);
+        }
+
+        function showWeeklyStats() {
+            const date = new Date(document.getElementById('statsDate').value);
+            const startOfWeek = new Date(date);
+            startOfWeek.setDate(date.getDate() - date.getDay());
+            
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+            const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+            const weeklyReservations = reservations.filter(r => {
+                const reservationDate = new Date(r.date);
+                return reservationDate >= startOfWeek && reservationDate <= endOfWeek && r.paid;
+            });
+
+            displayStats(weeklyReservations);
+        }
+
+        function showMonthlyStats() {
+            const date = new Date(document.getElementById('statsDate').value);
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+            const monthlyReservations = reservations.filter(r => {
+                const reservationDate = new Date(r.date);
+                return reservationDate.getFullYear() === year && reservationDate.getMonth() === month && r.paid;
+            });
+
+            displayStats(monthlyReservations);
+        }
+
+        function displayStats(reservations) {
+            const statsTable = document.getElementById('statsTable');
+            const staffStats = {};
+
+            reservations.forEach(reservation => {
+                if (!staffStats[reservation.staffName]) {
+                    staffStats[reservation.staffName] = {
+                        totalPrice: 0,
+                        totalCommission: 0
+                    };
+                }
+                staffStats[reservation.staffName].totalPrice += reservation.price;
+                staffStats[reservation.staffName].totalCommission += reservation.commission;
+            });
+
+            statsTable.innerHTML = '';
+            let grandTotalPrice = 0;
+            let grandTotalCommission = 0;
+
+            Object.keys(staffStats).forEach(staffName => {
+                const stats = staffStats[staffName];
+                grandTotalPrice += stats.totalPrice;
+                grandTotalCommission += stats.totalCommission;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-gray-300 p-2">${staffName}</td>
+                    <td class="border border-gray-300 p-2">${stats.totalPrice.toLocaleString()}원</td>
+                    <td class="border border-gray-300 p-2">${stats.totalCommission.toLocaleString()}원</td>
+                `;
+                statsTable.appendChild(row);
+            });
+
+            document.getElementById('grandTotalPrice').textContent = grandTotalPrice.toLocaleString();
+            document.getElementById('grandTotalCommission').textContent = grandTotalCommission.toLocaleString();
+        }
+
+        function updateStats() {
+            showDailyStats();
+        }
+
+        // 관리자 로그인
+        function loginAdmin() {
+            document.getElementById('adminLoginModal').style.display = 'block';
+        }
+
+        function processAdminLogin() {
+            const username = document.getElementById('adminId').value;
+            const password = document.getElementById('adminPassword').value;
+            const admins = JSON.parse(localStorage.getItem(databases.admins) || '[]');
+
+            const admin = admins.find(a => a.username === username && a.password === password);
+            if (admin) {
+                isAdminLoggedIn = true;
+                alert('로그인 성공!');
+                closeAdminLoginModal();
+            } else {
+                alert('아이디 또는 비밀번호가 잘못되었습니다.');
+            }
+        }
+
+        function closeAdminLoginModal() {
+            document.getElementById('adminLoginModal').style.display = 'none';
+            document.getElementById('adminId').value = '';
+            document.getElementById('adminPassword').value = '';
+        }
+
+        // DB 관리 함수들
+        function manageMenus() {
+            const menus = JSON.parse(localStorage.getItem(databases.menus) || '[]');
+            let content = `
+                <div class="mb-4">
+                    <button onclick="addNewMenu()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 메뉴 추가</button>
+                </div>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">메뉴명</th>
+                            <th class="border border-gray-300 p-2">기본시간</th>
+                            <th class="border border-gray-300 p-2">가격</th>
+                            <th class="border border-gray-300 p-2">커미션</th>
+                            <th class="border border-gray-300 p-2">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            menus.forEach(menu => {
+                content += `
+                    <tr>
+                        <td class="border border-gray-300 p-2">${menu.name}</td>
+                        <td class="border border-gray-300 p-2">${menu.duration}분</td>
+                        <td class="border border-gray-300 p-2">${menu.price.toLocaleString()}원</td>
+                        <td class="border border-gray-300 p-2">${menu.commission.toLocaleString()}원</td>
+                        <td class="border border-gray-300 p-2">
+                            <button onclick="editMenu(${menu.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                            <button onclick="deleteMenu(${menu.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            content += '</tbody></table>';
+
+            document.getElementById('managementTitle').textContent = '메뉴 관리';
+            document.getElementById('managementContent').innerHTML = content;
+            document.getElementById('managementModal').style.display = 'block';
+        }
+
+        function manageStaff() {
+            const staff = JSON.parse(localStorage.getItem(databases.staff) || '[]');
+            let content = `
+                <div class="mb-4">
+                    <button onclick="addNewStaff()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 직원 추가</button>
+                </div>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">이름</th>
+                            <th class="border border-gray-300 p-2">전화번호</th>
+                            <th class="border border-gray-300 p-2">은행명</th>
+                            <th class="border border-gray-300 p-2">계좌번호</th>
+                            <th class="border border-gray-300 p-2">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            staff.forEach(s => {
+                content += `
+                    <tr>
+                        <td class="border border-gray-300 p-2">${s.name}</td>
+                        <td class="border border-gray-300 p-2">${s.phone}</td>
+                        <td class="border border-gray-300 p-2">${s.bank}</td>
+                        <td class="border border-gray-300 p-2">${s.account}</td>
+                        <td class="border border-gray-300 p-2">
+                            <button onclick="editStaff(${s.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                            <button onclick="deleteStaff(${s.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            content += '</tbody></table>';
+
+            document.getElementById('managementTitle').textContent = '직원 관리';
+            document.getElementById('managementContent').innerHTML = content;
+            document.getElementById('managementModal').style.display = 'block';
+        }
+
+        function manageRooms() {
+            const rooms = JSON.parse(localStorage.getItem(databases.rooms) || '[]');
+            let content = `
+                <div class="mb-4">
+                    <button onclick="addNewRoom()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 방 추가</button>
+                </div>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">방번호</th>
+                            <th class="border border-gray-300 p-2">허용인원</th>
+                            <th class="border border-gray-300 p-2">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            rooms.forEach(room => {
+                content += `
+                    <tr>
+                        <td class="border border-gray-300 p-2">${room.roomNumber}</td>
+                        <td class="border border-gray-300 p-2">${room.capacity}명</td>
+                        <td class="border border-gray-300 p-2">
+                            <button onclick="editRoom(${room.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                            <button onclick="deleteRoom(${room.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            content += '</tbody></table>';
+
+            document.getElementById('managementTitle').textContent = '방 관리';
+            document.getElementById('managementContent').innerHTML = content;
+            document.getElementById('managementModal').style.display = 'block';
+        }
+
+        function manageCustomers() {
+            const customers = JSON.parse(localStorage.getItem(databases.customers) || '[]');
+            let content = `
+                <div class="mb-4">
+                    <button onclick="addNewCustomer()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 고객 추가</button>
+                </div>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">고객명</th>
+                            <th class="border border-gray-300 p-2">전화번호</th>
+                            <th class="border border-gray-300 p-2">고객번호</th>
+                            <th class="border border-gray-300 p-2">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            customers.forEach(customer => {
+                content += `
+                    <tr>
+                        <td class="border border-gray-300 p-2">${customer.name}</td>
+                        <td class="border border-gray-300 p-2">${customer.phone}</td>
+                        <td class="border border-gray-300 p-2">${customer.customerNumber}</td>
+                        <td class="border border-gray-300 p-2">
+                            <button onclick="editCustomer(${customer.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                            <button onclick="deleteCustomer(${customer.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            content += '</tbody></table>';
+
+            document.getElementById('managementTitle').textContent = '고객 관리';
+            document.getElementById('managementContent').innerHTML = content;
+            document.getElementById('managementModal').style.display = 'block';
+        }
+
+        function manageAdmins() {
+            const admins = JSON.parse(localStorage.getItem(databases.admins) || '[]');
+            let content = `
+                <div class="mb-4">
+                    <button onclick="addNewAdmin()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 관리자 추가</button>
+                </div>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">아이디</th>
+                            <th class="border border-gray-300 p-2">타입</th>
+                            <th class="border border-gray-300 p-2">가게명</th>
+                            <th class="border border-gray-300 p-2">전화번호</th>
+                            <th class="border border-gray-300 p-2">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            admins.forEach(admin => {
+                content += `
+                    <tr>
+                        <td class="border border-gray-300 p-2">${admin.username}</td>
+                        <td class="border border-gray-300 p-2">${admin.type === 'super' ? '최고관리자' : '일반관리자'}</td>
+                        <td class="border border-gray-300 p-2">${admin.shopName || '-'}</td>
+                        <td class="border border-gray-300 p-2">${admin.phone || '-'}</td>
+                        <td class="border border-gray-300 p-2">
+                            ${admin.type !== 'super' ? `
+                                <button onclick="editAdmin(${admin.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                                <button onclick="deleteAdmin(${admin.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>
+                            ` : '최고관리자'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            content += '</tbody></table>';
+
+            document.getElementById('managementTitle').textContent = '관리자 관리';
+            document.getElementById('managementContent').innerHTML = content;
+            document.getElementById('managementModal').style.display = 'block';
+        }
+
+        function managePaymentMethods() {
+            const paymentMethods = JSON.parse(localStorage.getItem(databases.paymentMethods) || '[]');
+            let content = `
+                <div class="mb-4">
+                    <button onclick="addNewPaymentMethod()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 입금방식 추가</button>
+                </div>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">입금방식</th>
+                            <th class="border border-gray-300 p-2">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            paymentMethods.forEach(method => {
+                content += `
+                    <tr>
+                        <td class="border border-gray-300 p-2">${method.name}</td>
+                        <td class="border border-gray-300 p-2">
+                            <button onclick="editPaymentMethod(${method.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                            <button onclick="deletePaymentMethod(${method.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            content += '</tbody></table>';
+
+            document.getElementById('managementTitle').textContent = '입금방식 관리';
+            document.getElementById('managementContent').innerHTML = content;
+            document.getElementById('managementModal').style.display = 'block';
+        }
+
+        function closeManagementModal() {
+            document.getElementById('managementModal').style.display = 'none';
+        }
+
+        // 추가/수정/삭제 함수들 (간단한 구현)
+        function addNewMenu() {
+            const name = prompt('메뉴명을 입력하세요:');
+            const duration = prompt('기본 시간을 입력하세요 (분):');
+            const price = prompt('가격을 입력하세요:');
+            const commission = prompt('커미션을 입력하세요:');
+
+            if (name && duration && price && commission) {
+                const menus = JSON.parse(localStorage.getItem(databases.menus) || '[]');
+                const newMenu = {
+                    id: Date.now(),
+                    name: name,
+                    duration: parseInt(duration),
+                    price: parseInt(price),
+                    commission: parseInt(commission)
+                };
+                menus.push(newMenu);
+                localStorage.setItem(databases.menus, JSON.stringify(menus));
+                manageMenus();
+            }
+        }
+
+        function addNewCustomer() {
+            const name = prompt('고객명을 입력하세요:');
+            const phone = prompt('전화번호를 입력하세요:');
+
+            if (name && phone) {
+                const customers = JSON.parse(localStorage.getItem(databases.customers) || '[]');
+                const customerNumber = (100000 + customers.length + 1).toString();
+                const newCustomer = {
+                    id: Date.now(),
+                    name: name,
+                    phone: phone,
+                    customerNumber: customerNumber
+                };
+                customers.push(newCustomer);
+                localStorage.setItem(databases.customers, JSON.stringify(customers));
+                manageCustomers();
+            }
+        }
+
+        function deleteReservation(id) {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                const reservations = JSON.parse(localStorage.getItem(databases.reservations) || '[]');
+                const filteredReservations = reservations.filter(r => r.id !== id);
+                localStorage.setItem(databases.reservations, JSON.stringify(filteredReservations));
+                loadDashboard();
+            }
+        }
+
+        // 기타 필요한 함수들은 간단히 구현
+        function editReservation(id) { alert('수정 기능은 추후 구현 예정입니다.'); }
+        function editMenu(id) { alert('수정 기능은 추후 구현 예정입니다.'); }
+        function deleteMenu(id) { alert('삭제 기능은 추후 구현 예정입니다.'); }
+        function addNewStaff() { alert('추가 기능은 추후 구현 예정입니다.'); }
+        function editStaff(id) { alert('수정 기능은 추후 구현 예정입니다.'); }
+        function deleteStaff(id) { alert('삭제 기능은 추후 구현 예정입니다.'); }
+        function addNewRoom() { alert('추가 기능은 추후 구현 예정입니다.'); }
+        function editRoom(id) { alert('수정 기능은 추후 구현 예정입니다.'); }
+        function deleteRoom(id) { alert('삭제 기능은 추후 구현 예정입니다.'); }
+        function editCustomer(id) { alert('수정 기능은 추후 구현 예정입니다.'); }
+        function deleteCustomer(id) { alert('삭제 기능은 추후 구현 예정입니다.'); }
+        function addNewAdmin() { alert('추가 기능은 추후 구현 예정입니다.'); }
+        function editAdmin(id) { alert('수정 기능은 추후 구현 예정입니다.'); }
+        function deleteAdmin(id) { alert('삭제 기능은 추후 구현 예정입니다.'); }
+        function addNewPaymentMethod() { alert('추가 기능은 추후 구현 예정입니다.'); }
+        function editPaymentMethod(id) { alert('수정 기능은 추후 구현 예정입니다.'); }
+        function deletePaymentMethod(id) { alert('삭제 기능은 추후 구현 예정입니다.'); }
+
+        // 앱 초기화
+        initializeApp();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98d829d647854b71',t:'MTc2MDI4ODUzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
