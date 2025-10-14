@@ -326,13 +326,14 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <button onclick="manageMenus()" class="bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-600" data-translate="menuManagement">메뉴 관리</button>
                 <button onclick="manageStaff()" class="bg-green-500 text-white py-3 px-4 rounded hover:bg-green-600" data-translate="staffManagement">직원 관리</button>
                 <button onclick="manageRooms()" class="bg-purple-500 text-white py-3 px-4 rounded hover:bg-purple-600" data-translate="roomManagement">방 관리</button>
                 <button onclick="manageCustomers()" class="bg-orange-500 text-white py-3 px-4 rounded hover:bg-orange-600" data-translate="customerManagement">고객 관리</button>
                 <button onclick="manageCurrency()" class="bg-pink-500 text-white py-3 px-4 rounded hover:bg-pink-600" data-translate="currencyManagement">화폐 단위</button>
                 <button onclick="managePaymentMethods()" class="bg-yellow-500 text-white py-3 px-4 rounded hover:bg-yellow-600" data-translate="paymentMethodManagement">입금방식 관리</button>
+                <button onclick="manageGuarantee()" class="bg-teal-500 text-white py-3 px-4 rounded hover:bg-teal-600">Guarantee 관리</button>
                 <div id="superAdminButtons" style="display: none;">
                     <button onclick="manageAdmins()" class="bg-red-500 text-white py-3 px-4 rounded hover:bg-red-600" data-translate="adminManagement">관리자 관리</button>
                 </div>
@@ -799,6 +800,10 @@
                 const globalCurrency = JSON.parse(localStorage.getItem('globalCurrency'));
                 localStorage.setItem(getAdminKey('currency'), JSON.stringify(globalCurrency));
             }
+
+            if (!localStorage.getItem(getAdminKey('guarantees'))) {
+                localStorage.setItem(getAdminKey('guarantees'), JSON.stringify([]));
+            }
         }
 
         // 로그인 처리
@@ -1087,8 +1092,11 @@
             
             // 순번으로 정렬 (순번이 없는 경우 999로 처리하여 맨 뒤로)
             activeStaff.sort((a, b) => {
-                const orderA = staffOrder[a.id] || 999;
-                const orderB = staffOrder[b.id] || 999;
+                const orderA = staffOrder[a.id] !== undefined ? staffOrder[a.id] : 1;
+                const orderB = staffOrder[b.id] !== undefined ? staffOrder[b.id] : 1;
+                if (orderA === 0 && orderB !== 0) return 1; // 휴가자는 맨 뒤로
+                if (orderA !== 0 && orderB === 0) return -1;
+                if (orderA === 0 && orderB === 0) return 0;
                 return orderA - orderB;
             });
             
@@ -1096,7 +1104,7 @@
             container.innerHTML = '';
 
             activeStaff.forEach(s => {
-                const order = staffOrder[s.id] || 1;
+                const order = staffOrder[s.id] !== undefined ? staffOrder[s.id] : 1;
                 const isOnVacation = order === 0;
                 const hasReservation = reservations.some(r => 
                     r.date === currentDate && 
@@ -1115,12 +1123,14 @@
                     div.style.color = 'white';
                     div.style.cursor = 'not-allowed';
                 } else if (isOnVacation) {
-                    div.style.backgroundColor = '#ef4444'; // 빨간색 - 휴가
+                    div.style.backgroundColor = '#9ca3af'; // 회색 - 휴가
                     div.style.color = 'white';
                     div.style.cursor = 'not-allowed';
                 } else {
-                    div.style.backgroundColor = '#3b82f6'; // 파란색 - 선택 가능
-                    div.style.color = 'white';
+                    // 선택 가능한 직원은 배경색 없음
+                    div.style.backgroundColor = 'transparent';
+                    div.style.color = '#374151';
+                    div.style.border = '2px solid #e5e7eb';
                 }
                 
                 div.textContent = `${s.name} (${order === 0 ? '휴가' : order})`;
@@ -1189,7 +1199,7 @@
                     
                     const staffMember = staff.find(s => s.id == staffId);
                     if (staffMember) {
-                        const order = staffOrder[staffMember.id] || 1;
+                        const order = staffOrder[staffMember.id] !== undefined ? staffOrder[staffMember.id] : 1;
                         const isOnVacation = order === 0;
                         const hasReservation = reservations.some(r => 
                             r.date === currentDate && 
@@ -1202,11 +1212,12 @@
                             item.style.backgroundColor = '#9ca3af';
                             item.style.color = 'white';
                         } else if (isOnVacation) {
-                            item.style.backgroundColor = '#ef4444';
+                            item.style.backgroundColor = '#9ca3af';
                             item.style.color = 'white';
                         } else {
-                            item.style.backgroundColor = '#3b82f6';
-                            item.style.color = 'white';
+                            item.style.backgroundColor = 'transparent';
+                            item.style.color = '#374151';
+                            item.style.border = '2px solid #e5e7eb';
                         }
                     }
                 }
@@ -1217,6 +1228,7 @@
             // 선택된 직원은 초록색으로 변경
             element.style.backgroundColor = '#10b981';
             element.style.color = 'white';
+            element.style.border = '2px solid #10b981';
         }
 
         function selectMenu(id, name, element) {
@@ -1455,8 +1467,12 @@
 
         function displayStats(reservations) {
             const currency = JSON.parse(localStorage.getItem(getAdminKey('currency')) || '{"symbol":"","name":"원"}');
+            const staff = JSON.parse(localStorage.getItem(getAdminKey('staff')) || '[]');
+            const staffOrder = JSON.parse(localStorage.getItem(getAdminKey('staffOrder')) || '{}');
+            const guarantees = JSON.parse(localStorage.getItem(getAdminKey('guarantees')) || '[]');
             const statsTable = document.getElementById('statsTable');
             const paymentStatsTable = document.getElementById('paymentStatsTable');
+            const statsDate = document.getElementById('statsDate').value;
             const staffStats = {};
             const paymentStats = {};
 
@@ -1465,7 +1481,8 @@
                 if (!staffStats[reservation.staffName]) {
                     staffStats[reservation.staffName] = {
                         totalPrice: 0,
-                        totalCommission: 0
+                        totalCommission: 0,
+                        staffId: reservation.staffId
                     };
                 }
                 staffStats[reservation.staffName].totalPrice += reservation.price;
@@ -1482,6 +1499,11 @@
                 }
             });
 
+            // Guarantee 적용 로직
+            const activeGuarantee = guarantees.find(g => 
+                g.startDate <= statsDate && g.endDate >= statsDate
+            );
+
             // 직원별 통계 표시
             statsTable.innerHTML = '';
             let grandTotalPrice = 0;
@@ -1489,14 +1511,37 @@
 
             Object.keys(staffStats).forEach(staffName => {
                 const stats = staffStats[staffName];
+                let finalCommission = stats.totalCommission;
+                
+                // Guarantee 적용 조건 확인
+                if (activeGuarantee && stats.staffId) {
+                    const staffMember = staff.find(s => s.id === stats.staffId);
+                    if (staffMember) {
+                        const staffStatus = staffMember.status || '정직원';
+                        const staffOrderNum = staffOrder[stats.staffId] !== undefined ? staffOrder[stats.staffId] : 1;
+                        
+                        // 정직원이고 휴가가 아닌 경우에만 Guarantee 적용
+                        if (staffStatus === '정직원' && staffOrderNum !== 0) {
+                            if (stats.totalCommission > 0 && stats.totalCommission < activeGuarantee.amount) {
+                                finalCommission = activeGuarantee.amount;
+                            }
+                        }
+                    }
+                }
+                
                 grandTotalPrice += stats.totalPrice;
-                grandTotalCommission += stats.totalCommission;
+                grandTotalCommission += finalCommission;
 
                 const row = document.createElement('tr');
+                const guaranteeApplied = finalCommission > stats.totalCommission;
+                const commissionDisplay = guaranteeApplied ? 
+                    `<span class="text-green-600 font-bold">${finalCommission.toLocaleString()}${currency.symbol} (G)</span>` :
+                    `${finalCommission.toLocaleString()}${currency.symbol}`;
+                
                 row.innerHTML = `
                     <td class="border border-gray-300 p-2">${staffName}</td>
                     <td class="border border-gray-300 p-2">${stats.totalPrice.toLocaleString()}${currency.symbol}</td>
-                    <td class="border border-gray-300 p-2">${stats.totalCommission.toLocaleString()}${currency.symbol}</td>
+                    <td class="border border-gray-300 p-2">${commissionDisplay}</td>
                 `;
                 statsTable.appendChild(row);
             });
@@ -2947,6 +2992,201 @@
             managePaymentMethods();
         }
 
+        // Guarantee 관리 함수들
+        function manageGuarantee() {
+            const guarantees = JSON.parse(localStorage.getItem(getAdminKey('guarantees')) || '[]');
+            const currency = JSON.parse(localStorage.getItem(getAdminKey('currency')) || '{"symbol":"","name":"원"}');
+            
+            let content = `
+                <div class="mb-4">
+                    <button onclick="showAddGuaranteeForm()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 Guarantee 추가</button>
+                </div>
+                <div id="addGuaranteeForm" style="display: none;" class="mb-4 p-4 bg-gray-50 rounded border">
+                    <h4 class="font-bold mb-2">새 Guarantee 추가</h4>
+                    <div class="grid grid-cols-4 gap-2 mb-2">
+                        <input type="number" id="newGuaranteeAmount" placeholder="금액" class="border rounded px-2 py-1">
+                        <input type="date" id="newGuaranteeStartDate" class="border rounded px-2 py-1">
+                        <input type="date" id="newGuaranteeEndDate" class="border rounded px-2 py-1">
+                        <div class="flex flex-col gap-1">
+                            <button onclick="saveNewGuarantee()" class="bg-green-500 text-white px-2 py-1 rounded text-sm">추가</button>
+                            <button onclick="hideAddGuaranteeForm()" class="bg-gray-500 text-white px-2 py-1 rounded text-sm">취소</button>
+                        </div>
+                    </div>
+                </div>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">금액</th>
+                            <th class="border border-gray-300 p-2">시작일</th>
+                            <th class="border border-gray-300 p-2">마감일</th>
+                            <th class="border border-gray-300 p-2">상태</th>
+                            <th class="border border-gray-300 p-2">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const today = new Date().toISOString().split('T')[0];
+            
+            guarantees.forEach(guarantee => {
+                const isActive = guarantee.startDate <= today && guarantee.endDate >= today;
+                const status = isActive ? '활성' : '비활성';
+                const statusColor = isActive ? 'text-green-600' : 'text-gray-500';
+                
+                content += `
+                    <tr id="guaranteeRow_${guarantee.id}">
+                        <td class="border border-gray-300 p-2">${guarantee.amount.toLocaleString()}${currency.symbol}</td>
+                        <td class="border border-gray-300 p-2">${guarantee.startDate}</td>
+                        <td class="border border-gray-300 p-2">${guarantee.endDate}</td>
+                        <td class="border border-gray-300 p-2 ${statusColor} font-bold">${status}</td>
+                        <td class="border border-gray-300 p-2">
+                            <button onclick="editGuarantee(${guarantee.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
+                            <button onclick="copyGuarantee(${guarantee.id})" class="bg-yellow-500 text-white px-2 py-1 rounded text-sm mr-1">복사</button>
+                            <button onclick="deleteGuarantee(${guarantee.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            content += '</tbody></table>';
+
+            document.getElementById('managementTitle').textContent = 'Guarantee 관리';
+            document.getElementById('managementContent').innerHTML = content;
+            document.getElementById('managementModal').style.display = 'block';
+        }
+
+        function showAddGuaranteeForm() {
+            document.getElementById('addGuaranteeForm').style.display = 'block';
+        }
+
+        function hideAddGuaranteeForm() {
+            document.getElementById('addGuaranteeForm').style.display = 'none';
+            clearGuaranteeForm();
+        }
+
+        function clearGuaranteeForm() {
+            document.getElementById('newGuaranteeAmount').value = '';
+            document.getElementById('newGuaranteeStartDate').value = '';
+            document.getElementById('newGuaranteeEndDate').value = '';
+        }
+
+        function saveNewGuarantee() {
+            const amount = document.getElementById('newGuaranteeAmount').value;
+            const startDate = document.getElementById('newGuaranteeStartDate').value;
+            const endDate = document.getElementById('newGuaranteeEndDate').value;
+            
+            if (!amount || !startDate || !endDate) {
+                alert('모든 필드를 입력해주세요.');
+                return;
+            }
+
+            if (parseInt(amount) <= 0) {
+                alert('금액은 0보다 커야 합니다.');
+                return;
+            }
+
+            if (startDate > endDate) {
+                alert('시작일은 마감일보다 이전이어야 합니다.');
+                return;
+            }
+
+            const guarantees = JSON.parse(localStorage.getItem(getAdminKey('guarantees')) || '[]');
+            const newGuarantee = {
+                id: Date.now(),
+                amount: parseInt(amount),
+                startDate: startDate,
+                endDate: endDate
+            };
+            guarantees.push(newGuarantee);
+            localStorage.setItem(getAdminKey('guarantees'), JSON.stringify(guarantees));
+            alert('새 Guarantee가 추가되었습니다.');
+            manageGuarantee();
+        }
+
+        function editGuarantee(id) {
+            const guarantees = JSON.parse(localStorage.getItem(getAdminKey('guarantees')) || '[]');
+            const guarantee = guarantees.find(g => g.id === id);
+            if (!guarantee) return;
+
+            const row = document.getElementById(`guaranteeRow_${id}`);
+            row.className = 'edit-row';
+            row.innerHTML = `
+                <td class="border border-gray-300 p-2">
+                    <input type="number" id="editGuaranteeAmount_${id}" value="${guarantee.amount}" class="w-full border rounded px-2 py-1">
+                </td>
+                <td class="border border-gray-300 p-2">
+                    <input type="date" id="editGuaranteeStartDate_${id}" value="${guarantee.startDate}" class="w-full border rounded px-2 py-1">
+                </td>
+                <td class="border border-gray-300 p-2">
+                    <input type="date" id="editGuaranteeEndDate_${id}" value="${guarantee.endDate}" class="w-full border rounded px-2 py-1">
+                </td>
+                <td class="border border-gray-300 p-2">-</td>
+                <td class="border border-gray-300 p-2">
+                    <button onclick="saveGuarantee(${id})" class="bg-green-500 text-white px-2 py-1 rounded text-sm mr-1">저장</button>
+                    <button onclick="manageGuarantee()" class="bg-gray-500 text-white px-2 py-1 rounded text-sm">취소</button>
+                </td>
+            `;
+        }
+
+        function saveGuarantee(id) {
+            const guarantees = JSON.parse(localStorage.getItem(getAdminKey('guarantees')) || '[]');
+            const guarantee = guarantees.find(g => g.id === id);
+            if (!guarantee) return;
+
+            const amount = document.getElementById(`editGuaranteeAmount_${id}`).value;
+            const startDate = document.getElementById(`editGuaranteeStartDate_${id}`).value;
+            const endDate = document.getElementById(`editGuaranteeEndDate_${id}`).value;
+
+            if (!amount || !startDate || !endDate) {
+                alert('모든 필드를 입력해주세요.');
+                return;
+            }
+
+            if (parseInt(amount) <= 0) {
+                alert('금액은 0보다 커야 합니다.');
+                return;
+            }
+
+            if (startDate > endDate) {
+                alert('시작일은 마감일보다 이전이어야 합니다.');
+                return;
+            }
+
+            guarantee.amount = parseInt(amount);
+            guarantee.startDate = startDate;
+            guarantee.endDate = endDate;
+
+            localStorage.setItem(getAdminKey('guarantees'), JSON.stringify(guarantees));
+            manageGuarantee();
+        }
+
+        function copyGuarantee(id) {
+            const guarantees = JSON.parse(localStorage.getItem(getAdminKey('guarantees')) || '[]');
+            const guarantee = guarantees.find(g => g.id === id);
+            if (!guarantee) return;
+
+            const newGuarantee = {
+                id: Date.now(),
+                amount: guarantee.amount,
+                startDate: guarantee.startDate,
+                endDate: guarantee.endDate
+            };
+
+            guarantees.push(newGuarantee);
+            localStorage.setItem(getAdminKey('guarantees'), JSON.stringify(guarantees));
+            alert('Guarantee가 복사되었습니다.');
+            manageGuarantee();
+        }
+
+        function deleteGuarantee(id) {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                const guarantees = JSON.parse(localStorage.getItem(getAdminKey('guarantees')) || '[]');
+                const filteredGuarantees = guarantees.filter(g => g.id !== id);
+                localStorage.setItem(getAdminKey('guarantees'), JSON.stringify(filteredGuarantees));
+                manageGuarantee();
+            }
+        }
+
         function loadStaffOrder() {
             const staff = JSON.parse(localStorage.getItem(getAdminKey('staff')) || '[]');
             const staffOrder = JSON.parse(localStorage.getItem(getAdminKey('staffOrder')) || '{}');
@@ -2961,7 +3201,7 @@
             tableBody.innerHTML = '';
 
             activeStaff.forEach(member => {
-                const currentOrder = staffOrder[member.id] || 1;
+                const currentOrder = staffOrder[member.id] !== undefined ? staffOrder[member.id] : 1;
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="border border-gray-300 p-2">${member.name}</td>
@@ -3011,5 +3251,5 @@
         initializeApp();
         updateTranslations();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e8a2e856a445c5',t:'MTc2MDQ2MTI2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e8f80b44c5f82a',t:'MTc2MDQ2NDc0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
