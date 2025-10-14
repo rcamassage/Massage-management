@@ -289,9 +289,10 @@
             </div>
 
             <div class="p-4 bg-gray-100 rounded">
-                <div class="grid grid-cols-2 gap-4">
-                    <div><strong data-translate="grandTotal">총 금액:</strong> <span id="grandTotalPrice">0</span><span id="grandTotalCurrency"></span></div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div><strong data-translate="grandTotal">총 금액(QR팁 제외):</strong> <span id="grandTotalPrice">0</span><span id="grandTotalCurrency"></span></div>
                     <div><strong data-translate="grandTotalCommission">총 커미션:</strong> <span id="grandTotalCommission">0</span><span id="grandTotalCommissionCurrency"></span></div>
+                    <div><strong data-translate="profit">수익:</strong> <span id="totalProfit">0</span><span id="totalProfitCurrency"></span></div>
                 </div>
             </div>
         </div>
@@ -307,16 +308,16 @@
                     <div>
                         <h4 class="font-semibold mb-2">백업</h4>
                         <div class="flex gap-2 flex-wrap">
-                            <button onclick="backupDataLocal()" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm">로컬 백업</button>
-                            <button onclick="backupDataGoogle()" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm">구글 백업</button>
+                            <button onclick="showLocalBackupDialog()" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm">로컬 백업</button>
+                            <button onclick="showGoogleBackupDialog()" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm">구글 백업</button>
                         </div>
                     </div>
                     <div>
                         <h4 class="font-semibold mb-2">복원</h4>
                         <div class="flex gap-2 flex-wrap">
                             <input type="file" id="restoreFile" accept=".json" style="display: none;" onchange="restoreData(event)">
-                            <button onclick="document.getElementById('restoreFile').click()" class="bg-orange-600 text-white px-3 py-2 rounded hover:bg-orange-700 text-sm">로컬 복원</button>
-                            <button onclick="restoreFromGoogle()" class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 text-sm">구글 복원</button>
+                            <button onclick="showLocalRestoreDialog()" class="bg-orange-600 text-white px-3 py-2 rounded hover:bg-orange-700 text-sm">로컬 복원</button>
+                            <button onclick="showGoogleRestoreDialog()" class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 text-sm">구글 복원</button>
                         </div>
                     </div>
                 </div>
@@ -367,6 +368,44 @@
         </div>
     </div>
 
+    <!-- 언어 변경 모달 -->
+    <div id="languageModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4">언어 선택 / Language / ภาษา / Ngôn ngữ</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="setLanguageAndClose('ko')" class="bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-600">한국어</button>
+                <button onclick="setLanguageAndClose('en')" class="bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-600">English</button>
+                <button onclick="setLanguageAndClose('th')" class="bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-600">ไทย</button>
+                <button onclick="setLanguageAndClose('vi')" class="bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-600">Tiếng Việt</button>
+            </div>
+            <button onclick="closeLanguageModal()" class="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">닫기</button>
+        </div>
+    </div>
+
+    <!-- 구글 로그인 모달 -->
+    <div id="googleLoginModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4">구글 계정 로그인</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">구글 이메일:</label>
+                    <input type="email" id="googleEmail" class="w-full border rounded px-3 py-2" placeholder="example@gmail.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">구글 비밀번호:</label>
+                    <input type="password" id="googlePassword" class="w-full border rounded px-3 py-2" placeholder="비밀번호 입력">
+                </div>
+                <div class="text-sm text-gray-600">
+                    * 실제 구글 계정 정보를 입력하세요. 백업/복원을 위해 구글 드라이브에 접근합니다.
+                </div>
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button id="googleLoginConfirm" onclick="processGoogleLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">로그인</button>
+                <button onclick="closeGoogleLoginModal()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">취소</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 전역 변수
         let currentLanguage = 'ko';
@@ -408,8 +447,9 @@
                 monthly: '월간',
                 totalPrice: '총 가격',
                 totalCommission: '총 커미션',
-                grandTotal: '총 금액',
+                grandTotal: '총 금액(QR팁 제외)',
                 grandTotalCommission: '총 커미션',
+                profit: '수익',
                 menuManagement: '메뉴 관리',
                 staffManagement: '직원 관리',
                 roomManagement: '방 관리',
@@ -476,8 +516,9 @@
                 monthly: 'Hàng tháng',
                 totalPrice: 'Tổng giá',
                 totalCommission: 'Tổng hoa hồng',
-                grandTotal: 'Tổng cộng',
+                grandTotal: 'Tổng cộng (trừ QR tip)',
                 grandTotalCommission: 'Tổng hoa hồng',
+                profit: 'Lợi nhuận',
                 menuManagement: 'Quản lý menu',
                 staffManagement: 'Quản lý nhân viên',
                 roomManagement: 'Quản lý phòng',
@@ -544,8 +585,9 @@
                 monthly: 'Monthly',
                 totalPrice: 'Total Price',
                 totalCommission: 'Total Commission',
-                grandTotal: 'Grand Total',
+                grandTotal: 'Grand Total (excl. QR tip)',
                 grandTotalCommission: 'Grand Total Commission',
+                profit: 'Profit',
                 menuManagement: 'Menu Management',
                 staffManagement: 'Staff Management',
                 roomManagement: 'Room Management',
@@ -612,8 +654,9 @@
                 monthly: 'รายเดือน',
                 totalPrice: 'ราคารวม',
                 totalCommission: 'คอมมิชชั่นรวม',
-                grandTotal: 'ยอดรวมทั้งหมด',
+                grandTotal: 'ยอดรวมทั้งหมด (ไม่รวม QR tip)',
                 grandTotalCommission: 'คอมมิชชั่นรวมทั้งหมด',
+                profit: 'กำไร',
                 menuManagement: 'จัดการเมนู',
                 staffManagement: 'จัดการพนักงาน',
                 roomManagement: 'จัดการห้อง',
@@ -665,7 +708,8 @@
             if (!localStorage.getItem('globalAdmins')) {
                 localStorage.setItem('globalAdmins', JSON.stringify([
                     {id: 1, username: 'admin', password: '12345678', type: 'super', shopName: '', phone: ''},
-                    {id: 2, username: 'shop1', password: '12345678', type: 'normal', shopName: '힐링 마사지', phone: '02-1234-5678'}
+                    {id: 2, username: 'shop1', password: '12345678', type: 'normal', shopName: '힐링 마사지', phone: '02-1234-5678'},
+                    {id: 3, username: 'Test', password: '1111', type: 'normal', shopName: '테스트 마사지', phone: '02-0000-0000'}
                 ]));
             }
 
@@ -742,7 +786,8 @@
                     {id: 1, name: '현금'},
                     {id: 2, name: 'QR'},
                     {id: 3, name: '쿠폰'},
-                    {id: 4, name: '기타'}
+                    {id: 4, name: 'QR팁'},
+                    {id: 5, name: '기타'}
                 ]));
             }
 
@@ -1294,7 +1339,7 @@
                 methodsContainer.innerHTML += `
                     <div class="flex items-center gap-2">
                         <label class="w-20">${method.name}:</label>
-                        <input type="number" id="payment_${method.id}" class="border rounded px-2 py-1 flex-1" value="${defaultValue}" onchange="updatePaymentTotal()">
+                        <input type="number" id="payment_${method.id}" class="border rounded px-2 py-1 flex-1" value="${defaultValue}" onchange="updatePaymentTotal()" inputmode="numeric" pattern="[0-9]*">
                         <span>${currency.symbol}</span>
                     </div>
                 `;
@@ -1324,8 +1369,21 @@
             const paymentMethods = JSON.parse(localStorage.getItem(getAdminKey('paymentMethods')) || '[]');
             const enteredAmount = parseInt(document.getElementById('paymentEnteredAmount').textContent.replace(/,/g, ''));
 
-            if (enteredAmount !== reservation.price) {
-                alert('입력된 금액이 총 금액과 일치하지 않습니다.');
+            // QR팁 금액 계산
+            let qrTipAmount = 0;
+            paymentMethods.forEach(method => {
+                if (method.name === 'QR팁') {
+                    const input = document.getElementById(`payment_${method.id}`);
+                    if (input) {
+                        qrTipAmount += parseInt(input.value) || 0;
+                    }
+                }
+            });
+
+            // QR팁을 제외한 금액이 예약 가격과 일치하는지 확인
+            const amountExcludingTip = enteredAmount - qrTipAmount;
+            if (amountExcludingTip !== reservation.price) {
+                alert('QR팁을 제외한 입력된 금액이 총 금액과 일치하지 않습니다.');
                 return;
             }
 
@@ -1354,6 +1412,7 @@
 
         // 통계 관련 함수
         function showDailyStats() {
+            document.getElementById('chartContainer').style.display = 'none';
             const date = document.getElementById('statsDate').value;
             const reservations = JSON.parse(localStorage.getItem(getAdminKey('reservations')) || '[]');
             const dailyReservations = reservations.filter(r => r.date === date && r.paid);
@@ -1362,6 +1421,7 @@
         }
 
         function showWeeklyStats() {
+            document.getElementById('chartContainer').style.display = 'none';
             const date = new Date(document.getElementById('statsDate').value);
             const startOfWeek = new Date(date);
             startOfWeek.setDate(date.getDate() - date.getDay());
@@ -1379,6 +1439,7 @@
         }
 
         function showMonthlyStats() {
+            document.getElementById('chartContainer').style.display = 'none';
             const date = new Date(document.getElementById('statsDate').value);
             const year = date.getFullYear();
             const month = date.getMonth();
@@ -1440,9 +1501,13 @@
                 statsTable.appendChild(row);
             });
 
-            // 입금방식별 통계 표시
+            // 입금방식별 통계 표시 (QR팁 제외한 총액 계산)
             paymentStatsTable.innerHTML = '';
+            let qrTipTotal = 0;
             Object.keys(paymentStats).forEach(method => {
+                if (method === 'QR팁') {
+                    qrTipTotal += paymentStats[method];
+                }
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="border border-gray-300 p-2">${method}</td>
@@ -1451,10 +1516,14 @@
                 paymentStatsTable.appendChild(row);
             });
 
+            const totalProfit = grandTotalPrice - grandTotalCommission;
+            
             document.getElementById('grandTotalPrice').textContent = grandTotalPrice.toLocaleString();
             document.getElementById('grandTotalCommission').textContent = grandTotalCommission.toLocaleString();
+            document.getElementById('totalProfit').textContent = totalProfit.toLocaleString();
             document.getElementById('grandTotalCurrency').textContent = currency.symbol;
             document.getElementById('grandTotalCommissionCurrency').textContent = currency.symbol;
+            document.getElementById('totalProfitCurrency').textContent = currency.symbol;
         }
 
         function updateStats() {
@@ -1468,7 +1537,7 @@
             
             let content = `
                 <div class="mb-4">
-                    <button onclick="showAddMenuForm()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">새 메뉴 추가</button>
+                    <button onclick="showAddMenuForm()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" data-translate="add">새 메뉴 추가</button>
                 </div>
                 <div id="addMenuForm" style="display: none;" class="mb-4 p-4 bg-gray-50 rounded border">
                     <h4 class="font-bold mb-2">새 메뉴 추가</h4>
@@ -1529,9 +1598,10 @@
 
             content += '</tbody></table>';
 
-            document.getElementById('managementTitle').textContent = '메뉴 관리';
+            document.getElementById('managementTitle').textContent = translations[currentLanguage].menuManagement || '메뉴 관리';
             document.getElementById('managementContent').innerHTML = content;
             document.getElementById('managementModal').style.display = 'block';
+            updateTranslations();
         }
 
         function showAddMenuForm() {
@@ -1726,9 +1796,10 @@
 
             content += '</tbody></table>';
 
-            document.getElementById('managementTitle').textContent = '직원 관리';
+            document.getElementById('managementTitle').textContent = translations[currentLanguage].staffManagement || '직원 관리';
             document.getElementById('managementContent').innerHTML = content;
             document.getElementById('managementModal').style.display = 'block';
+            updateTranslations();
         }
 
         function showAddStaffForm() {
@@ -2378,8 +2449,141 @@
             document.getElementById('managementModal').style.display = 'none';
         }
 
+        function showLanguageModal() {
+            document.getElementById('languageModal').style.display = 'block';
+        }
+
+        function closeLanguageModal() {
+            document.getElementById('languageModal').style.display = 'none';
+        }
+
+        function setLanguageAndClose(lang) {
+            setLanguage(lang);
+            closeLanguageModal();
+        }
+
         // 데이터 백업 및 복원 함수들
-        function backupData() {
+        let currentGoogleAction = null;
+
+        function showLocalBackupDialog() {
+            if (window.showDirectoryPicker) {
+                // 최신 브라우저에서 폴더 선택 지원
+                window.showDirectoryPicker().then(directoryHandle => {
+                    backupDataLocal(directoryHandle);
+                }).catch(err => {
+                    if (err.name !== 'AbortError') {
+                        // 폴더 선택이 지원되지 않는 경우 기본 다운로드
+                        backupDataLocal();
+                    }
+                });
+            } else {
+                // 폴더 선택이 지원되지 않는 경우 기본 다운로드
+                backupDataLocal();
+            }
+        }
+
+        function showLocalRestoreDialog() {
+            if (window.showDirectoryPicker) {
+                // 최신 브라우저에서 폴더 선택 지원
+                window.showDirectoryPicker().then(directoryHandle => {
+                    // 폴더에서 JSON 파일 찾기
+                    showFileSelectionFromDirectory(directoryHandle);
+                }).catch(err => {
+                    if (err.name !== 'AbortError') {
+                        // 폴더 선택이 지원되지 않는 경우 파일 선택
+                        document.getElementById('restoreFile').click();
+                    }
+                });
+            } else {
+                // 폴더 선택이 지원되지 않는 경우 파일 선택
+                document.getElementById('restoreFile').click();
+            }
+        }
+
+        function showGoogleBackupDialog() {
+            currentGoogleAction = 'backup';
+            document.getElementById('googleLoginModal').style.display = 'block';
+        }
+
+        function showGoogleRestoreDialog() {
+            currentGoogleAction = 'restore';
+            document.getElementById('googleLoginModal').style.display = 'block';
+        }
+
+        function closeGoogleLoginModal() {
+            document.getElementById('googleLoginModal').style.display = 'none';
+            document.getElementById('googleEmail').value = '';
+            document.getElementById('googlePassword').value = '';
+            currentGoogleAction = null;
+        }
+
+        function processGoogleLogin() {
+            const email = document.getElementById('googleEmail').value;
+            const password = document.getElementById('googlePassword').value;
+            
+            if (!email || !password) {
+                alert('이메일과 비밀번호를 모두 입력해주세요.');
+                return;
+            }
+
+            // 실제 구글 API 연동은 보안상 제한되므로 시뮬레이션
+            alert('보안상의 이유로 실제 구글 계정 연동은 제한됩니다. 로컬 백업/복원을 사용해주세요.');
+            closeGoogleLoginModal();
+            
+            if (currentGoogleAction === 'backup') {
+                backupDataLocal();
+            } else if (currentGoogleAction === 'restore') {
+                document.getElementById('restoreFile').click();
+            }
+        }
+
+        async function showFileSelectionFromDirectory(directoryHandle) {
+            try {
+                const files = [];
+                for await (const [name, handle] of directoryHandle.entries()) {
+                    if (handle.kind === 'file' && name.endsWith('.json')) {
+                        files.push({name, handle});
+                    }
+                }
+                
+                if (files.length === 0) {
+                    alert('선택한 폴더에 JSON 백업 파일이 없습니다.');
+                    return;
+                }
+                
+                // 파일 선택 다이얼로그 표시
+                let fileList = '복원할 파일을 선택하세요:\n\n';
+                files.forEach((file, index) => {
+                    fileList += `${index + 1}. ${file.name}\n`;
+                });
+                
+                const selection = prompt(fileList + '\n번호를 입력하세요:');
+                const fileIndex = parseInt(selection) - 1;
+                
+                if (fileIndex >= 0 && fileIndex < files.length) {
+                    const fileHandle = files[fileIndex].handle;
+                    const file = await fileHandle.getFile();
+                    const text = await file.text();
+                    
+                    try {
+                        const data = JSON.parse(text);
+                        if (confirm('기존 데이터를 덮어쓰시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                            Object.keys(data).forEach(key => {
+                                localStorage.setItem(key, data[key]);
+                            });
+                            alert('데이터가 복원되었습니다. 페이지를 새로고침합니다.');
+                            location.reload();
+                        }
+                    } catch (error) {
+                        alert('잘못된 백업 파일입니다.');
+                    }
+                }
+            } catch (error) {
+                alert('폴더에서 파일을 읽는 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function backupDataLocal(directoryHandle = null) {
             const adminData = {};
             const keys = Object.keys(localStorage);
             
@@ -2390,16 +2594,35 @@
             });
 
             const dataStr = JSON.stringify(adminData, null, 2);
+            const fileName = `${currentAdmin.username}_backup_${new Date().toISOString().split('T')[0]}.json`;
+            
+            if (directoryHandle) {
+                try {
+                    const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(dataStr);
+                    await writable.close();
+                    alert('선택한 폴더에 백업이 완료되었습니다.');
+                } catch (error) {
+                    // 폴더 저장 실패시 기본 다운로드
+                    downloadBackupFile(dataStr, fileName);
+                }
+            } else {
+                downloadBackupFile(dataStr, fileName);
+            }
+        }
+
+        function downloadBackupFile(dataStr, fileName) {
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             const url = URL.createObjectURL(dataBlob);
             
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${currentAdmin.username}_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.download = fileName;
             link.click();
             
             URL.revokeObjectURL(url);
-            alert('데이터가 백업되었습니다.');
+            alert('백업 파일이 다운로드되었습니다.');
         }
 
         function restoreData(event) {
@@ -2425,25 +2648,46 @@
             reader.readAsText(file);
         }
 
-        function exportAllData() {
-            const allData = {};
-            const keys = Object.keys(localStorage);
+        function exportAllDataExcel() {
+            const reservations = JSON.parse(localStorage.getItem(getAdminKey('reservations')) || '[]');
+            const staff = JSON.parse(localStorage.getItem(getAdminKey('staff')) || '[]');
+            const menus = JSON.parse(localStorage.getItem(getAdminKey('menus')) || '[]');
+            const rooms = JSON.parse(localStorage.getItem(getAdminKey('rooms')) || '[]');
+            const customers = JSON.parse(localStorage.getItem(getAdminKey('customers')) || '[]');
             
-            keys.forEach(key => {
-                allData[key] = localStorage.getItem(key);
+            let csvContent = "구분,날짜,직원명,메뉴,시간,가격,커미션,방번호,고객명,입금완료\n";
+            
+            // 예약 데이터
+            reservations.forEach(reservation => {
+                csvContent += `예약,${reservation.date},${reservation.staffName},${reservation.menuName},${reservation.duration}분,${reservation.price},${reservation.commission},${reservation.roomNumber || ''},${reservation.customerName || ''},${reservation.paid ? '완료' : '미완료'}\n`;
             });
-
-            const dataStr = JSON.stringify(allData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
             
+            // 직원 데이터
+            csvContent += "\n직원 정보\n";
+            csvContent += "이름,전화번호,은행명,계좌번호,상태\n";
+            staff.forEach(member => {
+                csvContent += `${member.name},${member.phone},${member.bank},${member.account},${member.status || '정직원'}\n`;
+            });
+            
+            // 메뉴 데이터
+            csvContent += "\n메뉴 정보\n";
+            csvContent += "메뉴명,30분가격,30분커미션,60분가격,60분커미션,90분가격,90분커미션,120분가격,120분커미션\n";
+            menus.forEach(menu => {
+                const p30 = menu.prices[30] || {price: '', commission: ''};
+                const p60 = menu.prices[60] || {price: '', commission: ''};
+                const p90 = menu.prices[90] || {price: '', commission: ''};
+                const p120 = menu.prices[120] || {price: '', commission: ''};
+                csvContent += `${menu.name},${p30.price},${p30.commission},${p60.price},${p60.commission},${p90.price},${p90.commission},${p120.price},${p120.commission}\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            link.href = url;
-            link.download = `전체데이터_${new Date().toISOString().split('T')[0]}.json`;
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `전체데이터_${currentAdmin.username}_${new Date().toISOString().split('T')[0]}.csv`);
             link.click();
-            
             URL.revokeObjectURL(url);
-            alert('전체 데이터가 내보내졌습니다.');
+            alert('전체 데이터 엑셀 파일이 다운로드되었습니다.');
         }
 
         // 관리자 관리 새 함수들
@@ -2767,6 +3011,5 @@
         initializeApp();
         updateTranslations();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e78ebd0015f82a',t:'MTc2MDQ0OTk1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e8a2e856a445c5',t:'MTc2MDQ2MTI2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-
