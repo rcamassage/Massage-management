@@ -243,7 +243,7 @@
                 <button onclick="showDailyStats()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-translate="daily">일간</button>
                 <button onclick="showWeeklyStats()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" data-translate="weekly">주간</button>
                 <button onclick="showMonthlyStats()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600" data-translate="monthly">월간</button>
-                <button onclick="showMenuChart()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600" data-translate="menuChart">메뉴 그래프</button>
+                <button onclick="showMenuChart()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600" data-translate="monthlyMenuChart">월간 메뉴 그래프</button>
                 <button onclick="showMonthlyChart()" class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600" data-translate="monthlyChart">월간 그래프</button>
                 <button onclick="downloadExcel()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700" data-translate="download">다운로드</button>
             </div>
@@ -502,7 +502,7 @@
                 orderZeroNote: '* 순번 0은 휴가로 처리됩니다',
                 selectRoom: '방 선택',
                 enterCustomerName: '고객명 입력',
-                menuChart: '메뉴 그래프',
+                monthlyMenuChart: '월간 메뉴 그래프',
                 monthlyChart: '월간 그래프',
                 download: '다운로드',
                 staffStats: '직원별 통계',
@@ -694,7 +694,7 @@
                 orderZeroNote: '* Thứ tự 0 được xử lý như nghỉ phép',
                 selectRoom: 'Chọn phòng',
                 enterCustomerName: 'Nhập tên khách hàng',
-                menuChart: 'Biểu đồ menu',
+                monthlyMenuChart: 'Biểu đồ menu tháng',
                 monthlyChart: 'Biểu đồ tháng',
                 download: 'Tải xuống',
                 staffStats: 'Thống kê nhân viên',
@@ -1304,7 +1304,7 @@
                     {id: 1, name: '현금'},
                     {id: 2, name: 'QR'},
                     {id: 3, name: '쿠폰'},
-                    {id: 4, name: 'QR팁'},
+                    {id: 4, name: 'QR TIP'},
                     {id: 5, name: '기타'}
                 ]));
             }
@@ -1529,19 +1529,19 @@
                 row.innerHTML = `
                     <td class="border border-gray-300 p-2">${staffDisplayName}</td>
                     <td class="border border-gray-300 p-2">${reservation.menuName}</td>
-                    <td class="border border-gray-300 p-2">${reservation.duration}분</td>
+                    <td class="border border-gray-300 p-2">${reservation.duration}min</td>
                     <td class="border border-gray-300 p-2">${reservation.startTime || '-'}</td>
                     <td class="border border-gray-300 p-2">${reservation.startTime ? endTime : '-'}</td>
-                    <td class="border border-gray-300 p-2 remaining-time">${reservation.paid ? (translations[currentLanguage].completeStatus || '완료') : (reservation.startTime ? remainingMinutes + (translations[currentLanguage].duration30 ? translations[currentLanguage].duration30.replace('30', '') : '분') : '-')}</td>
+                    <td class="border border-gray-300 p-2 remaining-time">${reservation.paid ? '-' : (reservation.startTime ? remainingMinutes + 'min' : '-')}</td>
                     <td class="border border-gray-300 p-2">${reservation.price.toLocaleString()}${currency.symbol}</td>
                     <td class="border border-gray-300 p-2">${reservation.commission.toLocaleString()}${currency.symbol}</td>
                     <td class="border border-gray-300 p-2">${reservation.roomNumber || '-'}</td>
                     <td class="border border-gray-300 p-2">
                         ${reservation.paid ? 
                             `<span class="bg-green-500 text-white px-3 py-1 rounded text-sm font-bold">${translations[currentLanguage].paymentCompleteStatus || '입금 완료'}</span>` :
-                            `<button onclick="editReservation(${reservation.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
-                             <button onclick="showPaymentModal(${reservation.id})" class="bg-green-500 text-white px-2 py-1 rounded text-sm mr-1">입금</button>
-                             <button onclick="deleteReservation(${reservation.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>`
+                            `<button onclick="editReservation(${reservation.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">${translations[currentLanguage].edit || '수정'}</button>
+                             <button onclick="showPaymentModal(${reservation.id})" class="bg-green-500 text-white px-2 py-1 rounded text-sm mr-1">${translations[currentLanguage].payment || '입금'}</button>
+                             <button onclick="deleteReservation(${reservation.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">${translations[currentLanguage].delete || '삭제'}</button>`
                         }
                     </td>
                 `;
@@ -1582,14 +1582,12 @@
                     const reservation = todayReservations[index];
                     
                     if (reservation.paid) {
-                        const completeText = translations[currentLanguage].completeStatus || '완료';
-                        cell.textContent = completeText;
+                        cell.textContent = '-';
                         cell.style.color = '#10b981';
                         cell.style.fontWeight = 'bold';
                     } else if (reservation.startTime) {
                         const remaining = calculateRemainingTime(reservation.startTime, reservation.duration);
-                        const minuteText = translations[currentLanguage].duration30 ? translations[currentLanguage].duration30.replace('30', '') : '분';
-                        cell.textContent = `${remaining}${minuteText}`;
+                        cell.textContent = `${remaining}min`;
                         
                         if (remaining <= 10) {
                             cell.style.color = '#ef4444';
@@ -1920,10 +1918,10 @@
             const paymentMethods = JSON.parse(localStorage.getItem(getAdminKey('paymentMethods')) || '[]');
             const enteredAmount = parseInt(document.getElementById('paymentEnteredAmount').textContent.replace(/,/g, ''));
 
-            // QR팁 금액 계산
+            // QR TIP 금액 계산
             let qrTipAmount = 0;
             paymentMethods.forEach(method => {
-                if (method.name === 'QR팁') {
+                if (method.name === 'QR TIP') {
                     const input = document.getElementById(`payment_${method.id}`);
                     if (input) {
                         qrTipAmount += parseInt(input.value) || 0;
@@ -1931,10 +1929,10 @@
                 }
             });
 
-            // QR팁을 제외한 금액이 예약 가격과 일치하는지 확인
+            // QR TIP을 제외한 금액이 예약 가격과 일치하는지 확인
             const amountExcludingTip = enteredAmount - qrTipAmount;
             if (amountExcludingTip !== reservation.price) {
-                alert('QR팁을 제외한 입력된 금액이 총 금액과 일치하지 않습니다.');
+                alert('QR TIP을 제외한 입력된 금액이 총 금액과 일치하지 않습니다.');
                 return;
             }
 
@@ -2015,6 +2013,8 @@
             const staffStats = {};
             const paymentStats = {};
 
+            let qrTipTotal = 0;
+            
             reservations.forEach(reservation => {
                 // 직원별 통계
                 if (!staffStats[reservation.staffName]) {
@@ -2034,6 +2034,11 @@
                             paymentStats[method] = 0;
                         }
                         paymentStats[method] += reservation.paymentDetails[method];
+                        
+                        // QR TIP 금액 별도 계산
+                        if (method === 'QR TIP') {
+                            qrTipTotal += reservation.paymentDetails[method];
+                        }
                     });
                 }
             });
@@ -2085,13 +2090,9 @@
                 statsTable.appendChild(row);
             });
 
-            // 입금방식별 통계 표시 (QR팁 제외한 총액 계산)
+            // 입금방식별 통계 표시
             paymentStatsTable.innerHTML = '';
-            let qrTipTotal = 0;
             Object.keys(paymentStats).forEach(method => {
-                if (method === 'QR팁') {
-                    qrTipTotal += paymentStats[method];
-                }
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="border border-gray-300 p-2">${method}</td>
@@ -2100,9 +2101,11 @@
                 paymentStatsTable.appendChild(row);
             });
 
-            const totalProfit = grandTotalPrice - grandTotalCommission;
+            // QR TIP을 제외한 총 금액 계산
+            const grandTotalExcludingTip = grandTotalPrice - qrTipTotal;
+            const totalProfit = grandTotalExcludingTip - grandTotalCommission;
             
-            document.getElementById('grandTotalPrice').textContent = grandTotalPrice.toLocaleString();
+            document.getElementById('grandTotalPrice').textContent = grandTotalExcludingTip.toLocaleString();
             document.getElementById('grandTotalCommission').textContent = grandTotalCommission.toLocaleString();
             document.getElementById('totalProfit').textContent = totalProfit.toLocaleString();
             document.getElementById('grandTotalCurrency').textContent = currency.symbol;
@@ -3365,46 +3368,138 @@
 
         // 차트 및 통계 함수들
         function showMenuChart() {
+            document.getElementById('chartContainer').style.display = 'none';
             const reservations = JSON.parse(localStorage.getItem(getAdminKey('reservations')) || '[]');
-            const date = document.getElementById('statsDate').value;
-            const dailyReservations = reservations.filter(r => r.date === date && r.paid);
+            const date = new Date(document.getElementById('statsDate').value);
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            const monthlyReservations = reservations.filter(r => {
+                const reservationDate = new Date(r.date);
+                return reservationDate.getFullYear() === year && reservationDate.getMonth() === month && r.paid;
+            });
             
             const menuStats = {};
-            dailyReservations.forEach(reservation => {
+            monthlyReservations.forEach(reservation => {
                 if (!menuStats[reservation.menuName]) {
                     menuStats[reservation.menuName] = 0;
                 }
                 menuStats[reservation.menuName] += reservation.price;
             });
 
-            drawChart(Object.keys(menuStats), Object.values(menuStats), '메뉴별 판매 금액', 'bar');
+            displayMenuStats(menuStats);
+        }
+
+        function displayMenuStats(menuStats) {
+            const currency = JSON.parse(localStorage.getItem(getAdminKey('currency')) || '{"symbol":"","name":"원"}');
+            const statsTable = document.getElementById('statsTable');
+            const paymentStatsTable = document.getElementById('paymentStatsTable');
+            
+            // 메뉴별 통계 표시
+            statsTable.innerHTML = '';
+            let totalMenuAmount = 0;
+            
+            Object.keys(menuStats).forEach(menuName => {
+                const amount = menuStats[menuName];
+                totalMenuAmount += amount;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-gray-300 p-2">${menuName}</td>
+                    <td class="border border-gray-300 p-2">${amount.toLocaleString()}${currency.symbol}</td>
+                    <td class="border border-gray-300 p-2">-</td>
+                `;
+                statsTable.appendChild(row);
+            });
+
+            // 입금방식별 통계는 숨김
+            paymentStatsTable.innerHTML = '';
+            
+            document.getElementById('grandTotalPrice').textContent = totalMenuAmount.toLocaleString();
+            document.getElementById('grandTotalCommission').textContent = '0';
+            document.getElementById('totalProfit').textContent = totalMenuAmount.toLocaleString();
+            document.getElementById('grandTotalCurrency').textContent = currency.symbol;
+            document.getElementById('grandTotalCommissionCurrency').textContent = currency.symbol;
+            document.getElementById('totalProfitCurrency').textContent = currency.symbol;
         }
 
         function showMonthlyChart() {
+            document.getElementById('chartContainer').style.display = 'block';
             const reservations = JSON.parse(localStorage.getItem(getAdminKey('reservations')) || '[]');
             const date = new Date(document.getElementById('statsDate').value);
             const year = date.getFullYear();
             const month = date.getMonth();
 
             const dailyStats = {};
+            const dailyCommissions = {};
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 dailyStats[dateStr] = 0;
+                dailyCommissions[dateStr] = 0;
             }
 
             reservations.forEach(reservation => {
                 const reservationDate = new Date(reservation.date);
                 if (reservationDate.getFullYear() === year && reservationDate.getMonth() === month && reservation.paid) {
-                    dailyStats[reservation.date] += reservation.price;
+                    // QR TIP 제외한 금액 계산
+                    let adjustedPrice = reservation.price;
+                    if (reservation.paymentDetails && reservation.paymentDetails['QR TIP']) {
+                        adjustedPrice -= reservation.paymentDetails['QR TIP'];
+                    }
+                    dailyStats[reservation.date] += adjustedPrice;
+                    dailyCommissions[reservation.date] += reservation.commission;
                 }
             });
 
             const labels = Object.keys(dailyStats).map(date => date.split('-')[2] + '일');
-            const data = Object.values(dailyStats);
+            const totalData = Object.values(dailyStats);
+            const profitData = Object.keys(dailyStats).map(date => dailyStats[date] - dailyCommissions[date]);
             
-            drawChart(labels, data, '일별 총 판매 금액', 'bar');
+            drawDualChart(labels, totalData, profitData, '일별 총액 및 수익', 'bar');
+            displayDailyStats(dailyStats, dailyCommissions);
+        }
+
+        function displayDailyStats(dailyStats, dailyCommissions) {
+            const currency = JSON.parse(localStorage.getItem(getAdminKey('currency')) || '{"symbol":"","name":"원"}');
+            const statsTable = document.getElementById('statsTable');
+            const paymentStatsTable = document.getElementById('paymentStatsTable');
+            
+            // 날짜별 통계 표시
+            statsTable.innerHTML = '';
+            let totalAmount = 0;
+            let totalCommission = 0;
+            
+            Object.keys(dailyStats).forEach(date => {
+                const amount = dailyStats[date];
+                const commission = dailyCommissions[date];
+                const profit = amount - commission;
+                
+                if (amount > 0) { // 매출이 있는 날만 표시
+                    totalAmount += amount;
+                    totalCommission += commission;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="border border-gray-300 p-2">${date}</td>
+                        <td class="border border-gray-300 p-2">${amount.toLocaleString()}${currency.symbol}</td>
+                        <td class="border border-gray-300 p-2">${profit.toLocaleString()}${currency.symbol}</td>
+                    `;
+                    statsTable.appendChild(row);
+                }
+            });
+
+            // 입금방식별 통계는 숨김
+            paymentStatsTable.innerHTML = '';
+            
+            const totalProfit = totalAmount - totalCommission;
+            document.getElementById('grandTotalPrice').textContent = totalAmount.toLocaleString();
+            document.getElementById('grandTotalCommission').textContent = totalCommission.toLocaleString();
+            document.getElementById('totalProfit').textContent = totalProfit.toLocaleString();
+            document.getElementById('grandTotalCurrency').textContent = currency.symbol;
+            document.getElementById('grandTotalCommissionCurrency').textContent = currency.symbol;
+            document.getElementById('totalProfitCurrency').textContent = currency.symbol;
         }
 
         function drawChart(labels, data, title, type) {
@@ -3448,6 +3543,82 @@
                 // 라벨
                 ctx.save();
                 ctx.translate(x + barWidth / 2, canvas.height - padding + 15);
+                ctx.rotate(-Math.PI / 4);
+                ctx.textAlign = 'right';
+                ctx.fillText(labels[index], 0, 0);
+                ctx.restore();
+            });
+            
+            // Y축
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvas.height - padding);
+            ctx.stroke();
+            
+            // X축
+            ctx.beginPath();
+            ctx.moveTo(padding, canvas.height - padding);
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.stroke();
+        }
+
+        function drawDualChart(labels, totalData, profitData, title, type) {
+            document.getElementById('chartContainer').style.display = 'block';
+            const canvas = document.getElementById('statsChart');
+            const ctx = canvas.getContext('2d');
+            
+            // 캔버스 초기화
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const padding = 60;
+            const chartWidth = canvas.width - padding * 2;
+            const chartHeight = canvas.height - padding * 2;
+            
+            const maxValue = Math.max(...totalData, ...profitData);
+            const barWidth = chartWidth / labels.length * 0.35;
+            const barSpacing = chartWidth / labels.length * 0.3;
+            
+            // 제목
+            ctx.fillStyle = '#333';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(title, canvas.width / 2, 30);
+            
+            // 범례
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(canvas.width - 150, 50, 15, 15);
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('총액', canvas.width - 130, 62);
+            
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(canvas.width - 150, 70, 15, 15);
+            ctx.fillText('수익', canvas.width - 130, 82);
+            
+            // 막대 그래프 그리기
+            totalData.forEach((value, index) => {
+                const barHeight = (value / maxValue) * chartHeight;
+                const x = padding + index * (barWidth * 2 + barSpacing);
+                const y = canvas.height - padding - barHeight;
+                
+                // 총액 막대
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // 수익 막대
+                const profitHeight = (profitData[index] / maxValue) * chartHeight;
+                const profitY = canvas.height - padding - profitHeight;
+                ctx.fillStyle = '#10b981';
+                ctx.fillRect(x + barWidth, profitY, barWidth, profitHeight);
+                
+                // 라벨
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.save();
+                ctx.translate(x + barWidth, canvas.height - padding + 15);
                 ctx.rotate(-Math.PI / 4);
                 ctx.textAlign = 'right';
                 ctx.fillText(labels[index], 0, 0);
@@ -3801,5 +3972,5 @@
         initializeApp();
         updateTranslations();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98f0bfb2e3314b95',t:'MTc2MDU0NjMyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98f128d790584b95',t:'MTc2MDU1MDYzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
