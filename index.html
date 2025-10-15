@@ -115,7 +115,10 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="text-center">
                     <label class="block text-sm font-medium mb-2" data-translate="todayDate">오늘 날짜</label>
-                    <input type="date" id="currentDate" class="border rounded px-3 py-2 w-full" onchange="updateCurrentDate()">
+                    <div class="flex gap-2">
+                        <input type="date" id="currentDate" class="border rounded px-3 py-2 flex-1">
+                        <button onclick="confirmDateChange()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-translate="confirmDate">확인</button>
+                    </div>
                 </div>
                 <div class="text-center">
                     <label class="block text-sm font-medium mb-2" data-translate="currentTime">현재 시간</label>
@@ -152,7 +155,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-4 text-sm text-gray-600">
+            <div class="mt-4 text-sm text-gray-600" data-translate="orderZeroVacationNote">
                 * 순번 0은 휴가로 처리됩니다.
             </div>
         </div>
@@ -213,12 +216,12 @@
                 <div>
                     <label class="block text-sm font-medium mb-2" data-translate="roomNumber">방번호 (선택사항)</label>
                     <select id="reservationRoom" class="w-full border rounded px-3 py-2">
-                        <option value="">방 선택</option>
+                        <option value="" data-translate="selectRoom">방 선택</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2" data-translate="customerName">고객명 (선택사항)</label>
-                    <input type="text" id="reservationCustomer" class="w-full border rounded px-3 py-2" placeholder="고객명 입력">
+                    <input type="text" id="reservationCustomer" class="w-full border rounded px-3 py-2" data-translate-placeholder="enterCustomerName">
                 </div>
             </div>
 
@@ -240,9 +243,9 @@
                 <button onclick="showDailyStats()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-translate="daily">일간</button>
                 <button onclick="showWeeklyStats()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" data-translate="weekly">주간</button>
                 <button onclick="showMonthlyStats()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600" data-translate="monthly">월간</button>
-                <button onclick="showMenuChart()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">메뉴 그래프</button>
-                <button onclick="showMonthlyChart()" class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">월간 그래프</button>
-                <button onclick="downloadExcel()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">다운로드</button>
+                <button onclick="showMenuChart()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600" data-translate="menuChart">메뉴 그래프</button>
+                <button onclick="showMonthlyChart()" class="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600" data-translate="monthlyChart">월간 그래프</button>
+                <button onclick="downloadExcel()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700" data-translate="download">다운로드</button>
             </div>
             <div class="mb-4">
                 <input type="date" id="statsDate" class="border rounded px-3 py-2" onchange="updateStats()">
@@ -255,7 +258,7 @@
             
             <!-- 직원별 통계 -->
             <div class="mb-6">
-                <h3 class="text-lg font-bold mb-2">직원별 통계</h3>
+                <h3 class="text-lg font-bold mb-2" data-translate="staffStatisticsTitle">직원별 통계</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full border-collapse border border-gray-300">
                         <thead>
@@ -273,13 +276,13 @@
 
             <!-- 입금방식별 통계 -->
             <div class="mb-6">
-                <h3 class="text-lg font-bold mb-2">입금방식별 통계</h3>
+                <h3 class="text-lg font-bold mb-2" data-translate="paymentMethodStatisticsTitle">입금방식별 통계</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full border-collapse border border-gray-300">
                         <thead>
                             <tr class="bg-gray-100">
-                                <th class="border border-gray-300 p-2">입금방식</th>
-                                <th class="border border-gray-300 p-2">금액</th>
+                                <th class="border border-gray-300 p-2" data-translate="paymentMethodColumn">입금방식</th>
+                                <th class="border border-gray-300 p-2" data-translate="amountColumn">금액</th>
                             </tr>
                         </thead>
                         <tbody id="paymentStatsTable">
@@ -303,26 +306,26 @@
             
             <!-- 데이터 백업/복원 -->
             <div class="mb-6 p-4 bg-gray-100 rounded">
-                <h3 class="text-lg font-bold mb-2">데이터 백업 및 복원</h3>
+                <h3 class="text-lg font-bold mb-2" data-translate="dataBackupRestoreTitle">데이터 백업 및 복원</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <h4 class="font-semibold mb-2">백업</h4>
+                        <h4 class="font-semibold mb-2" data-translate="backupButton">백업</h4>
                         <div class="flex gap-2 flex-wrap">
-                            <button onclick="showLocalBackupDialog()" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm">로컬 백업</button>
-                            <button onclick="showGoogleBackupDialog()" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm">구글 백업</button>
+                            <button onclick="showLocalBackupDialog()" class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm" data-translate="localBackupButton">로컬 백업</button>
+                            <button onclick="showGoogleBackupDialog()" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm" data-translate="googleBackupButton">구글 백업</button>
                         </div>
                     </div>
                     <div>
-                        <h4 class="font-semibold mb-2">복원</h4>
+                        <h4 class="font-semibold mb-2" data-translate="restoreButton">복원</h4>
                         <div class="flex gap-2 flex-wrap">
                             <input type="file" id="restoreFile" accept=".json" style="display: none;" onchange="restoreData(event)">
-                            <button onclick="showLocalRestoreDialog()" class="bg-orange-600 text-white px-3 py-2 rounded hover:bg-orange-700 text-sm">로컬 복원</button>
-                            <button onclick="showGoogleRestoreDialog()" class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 text-sm">구글 복원</button>
+                            <button onclick="showLocalRestoreDialog()" class="bg-orange-600 text-white px-3 py-2 rounded hover:bg-orange-700 text-sm" data-translate="localRestoreButton">로컬 복원</button>
+                            <button onclick="showGoogleRestoreDialog()" class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 text-sm" data-translate="googleRestoreButton">구글 복원</button>
                         </div>
                     </div>
                 </div>
                 <div class="mt-4">
-                    <button onclick="exportAllDataExcel()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">전체 데이터 엑셀 내보내기</button>
+                    <button onclick="exportAllDataExcel()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700" data-translate="exportAllDataButton">전체 데이터 엑셀 내보내기</button>
                 </div>
             </div>
             
@@ -485,7 +488,72 @@
                 adminType: '타입',
                 orderManagement: '순번 관리',
                 saveOrder: '순번 저장',
-                orderNumber: '순번'
+                orderNumber: '순번',
+                paymentComplete: '입금 완료',
+                complete: '완료',
+                fullTime: '정직원',
+                partTime: '단기고용',
+                resigned: '퇴사',
+                vacation: '휴가',
+                minutes30: '30분',
+                minutes60: '60분',
+                minutes90: '90분',
+                minutes120: '120분',
+                orderZeroNote: '* 순번 0은 휴가로 처리됩니다',
+                selectRoom: '방 선택',
+                enterCustomerName: '고객명 입력',
+                menuChart: '메뉴 그래프',
+                monthlyChart: '월간 그래프',
+                download: '다운로드',
+                staffStats: '직원별 통계',
+                paymentMethodStats: '입금방식별 통계',
+                paymentMethod: '입금방식',
+                amount: '금액',
+                dataBackupRestore: '데이터 백업 및 복원',
+                backup: '백업',
+                restore: '복원',
+                screen: '화면',
+                am: '오전',
+                pm: '오후',
+                localBackup: '로컬 백업',
+                localRestore: '로컬 복원',
+                googleBackup: '구글 백업',
+                googleRestore: '구글 복원',
+                exportAllData: '전체 데이터 엑셀 내보내기',
+                management: '관리',
+                confirmDate: '확인',
+                paymentCompleteStatus: '입금 완료',
+                completeStatus: '완료',
+                fullTimeEmployee: '정직원',
+                partTimeEmployee: '단기직원',
+                resignedEmployee: '퇴사',
+                vacationStatus: '휴가',
+                duration30: '30분',
+                duration60: '60분',
+                duration90: '90분',
+                duration120: '120분',
+                orderZeroVacationNote: '* 순번 0은 휴가로 처리됩니다',
+                selectRoomOption: '방선택',
+                enterCustomerNamePlaceholder: '고객명 입력',
+                menuGraphTitle: '메뉴 그래프',
+                monthlyGraphTitle: '월간 그래프',
+                downloadButton: '다운로드',
+                staffStatisticsTitle: '직원별 통계',
+                paymentMethodStatisticsTitle: '입금 방식별 통계',
+                paymentMethodColumn: '입금 방식',
+                amountColumn: '금액',
+                dataBackupRestoreTitle: '데이터 백업 및 복원',
+                backupButton: '백업',
+                restoreButton: '복원',
+                screenLabel: '화면',
+                morningLabel: '오전',
+                afternoonLabel: '오후',
+                localBackupButton: '로컬 백업',
+                localRestoreButton: '로컬 복원',
+                googleBackupButton: '구글 백업',
+                googleRestoreButton: '구글 복원',
+                exportAllDataButton: '전체 데이터 엑셀 내보내기',
+                managementLabel: '관리'
             },
             vi: {
                 title: 'Hệ thống quản lý massage',
@@ -554,7 +622,72 @@
                 adminType: 'Loại',
                 orderManagement: 'Quản lý thứ tự',
                 saveOrder: 'Lưu thứ tự',
-                orderNumber: 'Thứ tự'
+                orderNumber: 'Thứ tự',
+                paymentComplete: 'Thanh toán hoàn tất',
+                complete: 'Hoàn tất',
+                fullTime: 'Nhân viên chính thức',
+                partTime: 'Nhân viên ngắn hạn',
+                resigned: 'Đã nghỉ việc',
+                vacation: 'Nghỉ phép',
+                minutes30: '30 phút',
+                minutes60: '60 phút',
+                minutes90: '90 phút',
+                minutes120: '120 phút',
+                orderZeroNote: '* Thứ tự 0 được xử lý như nghỉ phép',
+                selectRoom: 'Chọn phòng',
+                enterCustomerName: 'Nhập tên khách hàng',
+                menuChart: 'Biểu đồ menu',
+                monthlyChart: 'Biểu đồ tháng',
+                download: 'Tải xuống',
+                staffStats: 'Thống kê nhân viên',
+                paymentMethodStats: 'Thống kê phương thức thanh toán',
+                paymentMethod: 'Phương thức thanh toán',
+                amount: 'Số tiền',
+                dataBackupRestore: 'Sao lưu và khôi phục dữ liệu',
+                backup: 'Sao lưu',
+                restore: 'Khôi phục',
+                screen: 'Màn hình',
+                am: 'Sáng',
+                pm: 'Chiều',
+                localBackup: 'Sao lưu cục bộ',
+                localRestore: 'Khôi phục cục bộ',
+                googleBackup: 'Sao lưu Google',
+                googleRestore: 'Khôi phục Google',
+                exportAllData: 'Xuất tất cả dữ liệu Excel',
+                management: 'Quản lý',
+                confirmDate: 'Xác nhận',
+                paymentCompleteStatus: 'Thanh toán hoàn tất',
+                completeStatus: 'Hoàn tất',
+                fullTimeEmployee: 'Nhân viên chính thức',
+                partTimeEmployee: 'Nhân viên ngắn hạn',
+                resignedEmployee: 'Đã nghỉ việc',
+                vacationStatus: 'Nghỉ phép',
+                duration30: '30 phút',
+                duration60: '60 phút',
+                duration90: '90 phút',
+                duration120: '120 phút',
+                orderZeroVacationNote: '* Thứ tự 0 được xử lý như nghỉ phép',
+                selectRoomOption: 'Chọn phòng',
+                enterCustomerNamePlaceholder: 'Nhập tên khách hàng',
+                menuGraphTitle: 'Biểu đồ menu',
+                monthlyGraphTitle: 'Biểu đồ tháng',
+                downloadButton: 'Tải xuống',
+                staffStatisticsTitle: 'Thống kê nhân viên',
+                paymentMethodStatisticsTitle: 'Thống kê phương thức thanh toán',
+                paymentMethodColumn: 'Phương thức thanh toán',
+                amountColumn: 'Số tiền',
+                dataBackupRestoreTitle: 'Sao lưu và khôi phục dữ liệu',
+                backupButton: 'Sao lưu',
+                restoreButton: 'Khôi phục',
+                screenLabel: 'Màn hình',
+                morningLabel: 'Sáng',
+                afternoonLabel: 'Chiều',
+                localBackupButton: 'Sao lưu cục bộ',
+                localRestoreButton: 'Khôi phục cục bộ',
+                googleBackupButton: 'Sao lưu Google',
+                googleRestoreButton: 'Khôi phục Google',
+                exportAllDataButton: 'Xuất tất cả dữ liệu Excel',
+                managementLabel: 'Quản lý'
             },
             en: {
                 title: 'Massage Management System',
@@ -623,7 +756,72 @@
                 adminType: 'Type',
                 orderManagement: 'Order Management',
                 saveOrder: 'Save Order',
-                orderNumber: 'Order'
+                orderNumber: 'Order',
+                paymentComplete: 'Payment Complete',
+                complete: 'Complete',
+                fullTime: 'Full-time',
+                partTime: 'Part-time',
+                resigned: 'Resigned',
+                vacation: 'Vacation',
+                minutes30: '30 minutes',
+                minutes60: '60 minutes',
+                minutes90: '90 minutes',
+                minutes120: '120 minutes',
+                orderZeroNote: '* Order 0 is treated as vacation',
+                selectRoom: 'Select Room',
+                enterCustomerName: 'Enter customer name',
+                menuChart: 'Menu Chart',
+                monthlyChart: 'Monthly Chart',
+                download: 'Download',
+                staffStats: 'Staff Statistics',
+                paymentMethodStats: 'Payment Method Statistics',
+                paymentMethod: 'Payment Method',
+                amount: 'Amount',
+                dataBackupRestore: 'Data Backup and Restore',
+                backup: 'Backup',
+                restore: 'Restore',
+                screen: 'Screen',
+                am: 'AM',
+                pm: 'PM',
+                localBackup: 'Local Backup',
+                localRestore: 'Local Restore',
+                googleBackup: 'Google Backup',
+                googleRestore: 'Google Restore',
+                exportAllData: 'Export All Data to Excel',
+                management: 'Management',
+                confirmDate: 'Confirm',
+                paymentCompleteStatus: 'Payment Complete',
+                completeStatus: 'Complete',
+                fullTimeEmployee: 'Full-time',
+                partTimeEmployee: 'Part-time',
+                resignedEmployee: 'Resigned',
+                vacationStatus: 'Vacation',
+                duration30: '30 minutes',
+                duration60: '60 minutes',
+                duration90: '90 minutes',
+                duration120: '120 minutes',
+                orderZeroVacationNote: '* Order 0 is treated as vacation',
+                selectRoomOption: 'Select Room',
+                enterCustomerNamePlaceholder: 'Enter customer name',
+                menuGraphTitle: 'Menu Chart',
+                monthlyGraphTitle: 'Monthly Chart',
+                downloadButton: 'Download',
+                staffStatisticsTitle: 'Staff Statistics',
+                paymentMethodStatisticsTitle: 'Payment Method Statistics',
+                paymentMethodColumn: 'Payment Method',
+                amountColumn: 'Amount',
+                dataBackupRestoreTitle: 'Data Backup and Restore',
+                backupButton: 'Backup',
+                restoreButton: 'Restore',
+                screenLabel: 'Screen',
+                morningLabel: 'AM',
+                afternoonLabel: 'PM',
+                localBackupButton: 'Local Backup',
+                localRestoreButton: 'Local Restore',
+                googleBackupButton: 'Google Backup',
+                googleRestoreButton: 'Google Restore',
+                exportAllDataButton: 'Export All Data to Excel',
+                managementLabel: 'Management'
             },
             th: {
                 title: 'ระบบจัดการนวดแผนไทย',
@@ -692,7 +890,72 @@
                 adminType: 'ประเภท',
                 orderManagement: 'จัดการลำดับ',
                 saveOrder: 'บันทึกลำดับ',
-                orderNumber: 'ลำดับ'
+                orderNumber: 'ลำดับ',
+                paymentComplete: 'ชำระเงินเสร็จสิ้น',
+                complete: 'เสร็จสิ้น',
+                fullTime: 'พนักงานประจำ',
+                partTime: 'พนักงานชั่วคราว',
+                resigned: 'ลาออก',
+                vacation: 'ลาพักร้อน',
+                minutes30: '30 นาที',
+                minutes60: '60 นาที',
+                minutes90: '90 นาที',
+                minutes120: '120 นาที',
+                orderZeroNote: '* ลำดับ 0 จะถือเป็นลาพักร้อน',
+                selectRoom: 'เลือกห้อง',
+                enterCustomerName: 'กรอกชื่อลูกค้า',
+                menuChart: 'กราฟเมนู',
+                monthlyChart: 'กราฟรายเดือน',
+                download: 'ดาวน์โหลด',
+                staffStats: 'สถิติพนักงาน',
+                paymentMethodStats: 'สถิติวิธีการชำระเงิน',
+                paymentMethod: 'วิธีการชำระเงิน',
+                amount: 'จำนวนเงิน',
+                dataBackupRestore: 'สำรองและกู้คืนข้อมูล',
+                backup: 'สำรอง',
+                restore: 'กู้คืน',
+                screen: 'หน้าจอ',
+                am: 'ก่อนเที่ยง',
+                pm: 'หลังเที่ยง',
+                localBackup: 'สำรองข้อมูลในเครื่อง',
+                localRestore: 'กู้คืนข้อมูลในเครื่อง',
+                googleBackup: 'สำรองข้อมูล Google',
+                googleRestore: 'กู้คืนข้อมูล Google',
+                exportAllData: 'ส่งออกข้อมูลทั้งหมดเป็น Excel',
+                management: 'จัดการ',
+                confirmDate: 'ยืนยัน',
+                paymentCompleteStatus: 'ชำระเงินเสร็จสิ้น',
+                completeStatus: 'เสร็จสิ้น',
+                fullTimeEmployee: 'พนักงานประจำ',
+                partTimeEmployee: 'พนักงานชั่วคราว',
+                resignedEmployee: 'ลาออก',
+                vacationStatus: 'ลาพักร้อน',
+                duration30: '30 นาที',
+                duration60: '60 นาที',
+                duration90: '90 นาที',
+                duration120: '120 นาที',
+                orderZeroVacationNote: '* ลำดับ 0 จะถือเป็นลาพักร้อน',
+                selectRoomOption: 'เลือกห้อง',
+                enterCustomerNamePlaceholder: 'กรอกชื่อลูกค้า',
+                menuGraphTitle: 'กราฟเมนู',
+                monthlyGraphTitle: 'กราฟรายเดือน',
+                downloadButton: 'ดาวน์โหลด',
+                staffStatisticsTitle: 'สถิติพนักงาน',
+                paymentMethodStatisticsTitle: 'สถิติวิธีการชำระเงิน',
+                paymentMethodColumn: 'วิธีการชำระเงิน',
+                amountColumn: 'จำนวนเงิน',
+                dataBackupRestoreTitle: 'สำรองและกู้คืนข้อมูล',
+                backupButton: 'สำรอง',
+                restoreButton: 'กู้คืน',
+                screenLabel: 'หน้าจอ',
+                morningLabel: 'ก่อนเที่ยง',
+                afternoonLabel: 'หลังเที่ยง',
+                localBackupButton: 'สำรองข้อมูลในเครื่อง',
+                localRestoreButton: 'กู้คืนข้อมูลในเครื่อง',
+                googleBackupButton: 'สำรองข้อมูล Google',
+                googleRestoreButton: 'กู้คืนข้อมูล Google',
+                exportAllDataButton: 'ส่งออกข้อมูลทั้งหมดเป็น Excel',
+                managementLabel: 'จัดการ'
             }
         };
 
@@ -702,6 +965,28 @@
             updateCurrentTime();
             setInterval(updateCurrentTime, 1000);
             document.getElementById('currentDate').value = new Date().toISOString().split('T')[0];
+            
+            // 새로고침시 로그인 상태 복원
+            const savedAdmin = localStorage.getItem('currentAdmin');
+            if (savedAdmin) {
+                currentAdmin = JSON.parse(savedAdmin);
+                initializeAdminData();
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainScreen').style.display = 'block';
+                
+                // 상점명 설정
+                const shopNameElement = document.getElementById('shopName');
+                if (currentAdmin.type === 'super') {
+                    shopNameElement.textContent = '최고 관리자 화면';
+                    document.getElementById('superAdminButtons').style.display = 'block';
+                } else {
+                    shopNameElement.textContent = currentAdmin.shopName;
+                    document.getElementById('superAdminButtons').style.display = 'none';
+                }
+                
+                loadReservationData();
+                showDashboard();
+            }
         }
 
         // 전역 데이터 초기화 (관리자 계정만)
@@ -821,6 +1106,7 @@
             
             if (admin) {
                 currentAdmin = admin;
+                localStorage.setItem('currentAdmin', JSON.stringify(admin));
                 initializeAdminData();
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainScreen').style.display = 'block';
@@ -846,6 +1132,7 @@
         function logout() {
             if (confirm('로그아웃 하시겠습니까?')) {
                 currentAdmin = null;
+                localStorage.removeItem('currentAdmin');
                 selectedStaff = null;
                 selectedMenu = null;
                 selectedDuration = null;
@@ -926,6 +1213,17 @@
             loadReservationData();
         }
 
+        function confirmDateChange() {
+            loadReservationData();
+            if (document.getElementById('dashboardSection').style.display === 'block') {
+                loadDashboard();
+            }
+            if (document.getElementById('statisticsSection').style.display === 'block') {
+                document.getElementById('statsDate').value = document.getElementById('currentDate').value;
+                showDailyStats();
+            }
+        }
+
         // 섹션 표시/숨김
         function hideAllSections() {
             const sections = ['dashboardSection', 'orderSection', 'reservationSection', 'statisticsSection', 'dbManagementSection'];
@@ -992,19 +1290,23 @@
                 
                 const currency = JSON.parse(localStorage.getItem(getAdminKey('currency')) || '{"symbol":"","name":"원"}');
                 
+                const staffOrderNum = staffOrder[reservation.staffId] !== undefined ? staffOrder[reservation.staffId] : 1;
+                const vacationText = translations[currentLanguage].vacationStatus || '휴가';
+                const staffDisplayName = staffOrderNum === 0 ? `${reservation.staffName} (${vacationText})` : `${staffOrderNum}. ${reservation.staffName}`;
+                
                 row.innerHTML = `
-                    <td class="border border-gray-300 p-2">${reservation.staffName}</td>
+                    <td class="border border-gray-300 p-2">${staffDisplayName}</td>
                     <td class="border border-gray-300 p-2">${reservation.menuName}</td>
                     <td class="border border-gray-300 p-2">${reservation.duration}분</td>
                     <td class="border border-gray-300 p-2">${reservation.startTime || '-'}</td>
                     <td class="border border-gray-300 p-2">${reservation.startTime ? endTime : '-'}</td>
-                    <td class="border border-gray-300 p-2 remaining-time">${reservation.paid ? '완료' : (reservation.startTime ? remainingMinutes + '분' : '-')}</td>
+                    <td class="border border-gray-300 p-2 remaining-time">${reservation.paid ? (translations[currentLanguage].completeStatus || '완료') : (reservation.startTime ? remainingMinutes + (translations[currentLanguage].duration30 ? translations[currentLanguage].duration30.replace('30', '') : '분') : '-')}</td>
                     <td class="border border-gray-300 p-2">${reservation.price.toLocaleString()}${currency.symbol}</td>
                     <td class="border border-gray-300 p-2">${reservation.commission.toLocaleString()}${currency.symbol}</td>
                     <td class="border border-gray-300 p-2">${reservation.roomNumber || '-'}</td>
                     <td class="border border-gray-300 p-2">
                         ${reservation.paid ? 
-                            '<span class="bg-green-500 text-white px-3 py-1 rounded text-sm font-bold">입금 완료</span>' :
+                            `<span class="bg-green-500 text-white px-3 py-1 rounded text-sm font-bold">${translations[currentLanguage].paymentCompleteStatus || '입금 완료'}</span>` :
                             `<button onclick="editReservation(${reservation.id})" class="bg-blue-500 text-white px-2 py-1 rounded text-sm mr-1">수정</button>
                              <button onclick="showPaymentModal(${reservation.id})" class="bg-green-500 text-white px-2 py-1 rounded text-sm mr-1">입금</button>
                              <button onclick="deleteReservation(${reservation.id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm">삭제</button>`
@@ -1048,12 +1350,14 @@
                     const reservation = todayReservations[index];
                     
                     if (reservation.paid) {
-                        cell.textContent = '완료';
+                        const completeText = translations[currentLanguage].completeStatus || '완료';
+                        cell.textContent = completeText;
                         cell.style.color = '#10b981';
                         cell.style.fontWeight = 'bold';
                     } else if (reservation.startTime) {
                         const remaining = calculateRemainingTime(reservation.startTime, reservation.duration);
-                        cell.textContent = `${remaining}분`;
+                        const minuteText = translations[currentLanguage].duration30 ? translations[currentLanguage].duration30.replace('30', '') : '분';
+                        cell.textContent = `${remaining}${minuteText}`;
                         
                         if (remaining <= 10) {
                             cell.style.color = '#ef4444';
@@ -1133,7 +1437,8 @@
                     div.style.border = '2px solid #e5e7eb';
                 }
                 
-                div.textContent = `${s.name} (${order === 0 ? '휴가' : order})`;
+                const vacationText = translations[currentLanguage].vacationStatus || '휴가';
+                div.textContent = `${s.name} (${order === 0 ? vacationText : order})`;
                 
                 if (!hasReservation && !isOnVacation) {
                     div.onclick = () => selectStaff(s.id, s.name, div);
@@ -1169,7 +1474,8 @@
                 Object.keys(menu.prices).forEach(duration => {
                     const div = document.createElement('div');
                     div.className = 'selection-item';
-                    div.textContent = `${duration}분`;
+                    const durationKey = `duration${duration}`;
+                    div.textContent = translations[currentLanguage][durationKey] || `${duration}분`;
                     div.onclick = () => selectDuration(parseInt(duration), div);
                     container.appendChild(div);
                 });
@@ -1179,7 +1485,8 @@
         function loadRoomSelection() {
             const rooms = JSON.parse(localStorage.getItem(getAdminKey('rooms')) || '[]');
             const roomSelect = document.getElementById('reservationRoom');
-            roomSelect.innerHTML = '<option value="">방 선택</option>';
+            const selectRoomText = translations[currentLanguage].selectRoomOption || '방 선택';
+            roomSelect.innerHTML = `<option value="">${selectRoomText}</option>`;
             rooms.forEach(r => {
                 roomSelect.innerHTML += `<option value="${r.id}">${r.roomNumber}</option>`;
             });
@@ -3251,5 +3558,5 @@
         initializeApp();
         updateTranslations();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e8f80b44c5f82a',t:'MTc2MDQ2NDc0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98eea08a40fe130f',t:'MTc2MDUyNDA4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
