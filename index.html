@@ -2209,7 +2209,7 @@
             });
 
             // QR TIP을 제외한 총 금액 계산
-            const grandTotalExcludingTip = grandTotalPrice - qrTipTotal;
+            const grandTotalExcludingTip = grandTotalPrice;
             const totalProfit = grandTotalExcludingTip - grandTotalCommission;
             
             document.getElementById('grandTotalPrice').textContent = grandTotalExcludingTip.toLocaleString();
